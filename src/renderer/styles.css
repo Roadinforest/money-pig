@@ -1,0 +1,418 @@
+:root {
+  color: #1d2320;
+  background: #f6f4ef;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 980px;
+  min-height: 100vh;
+  background: #f6f4ef;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 22px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+.topbar p {
+  margin: 5px 0 0;
+  max-width: 860px;
+  color: #68706a;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.metric-card,
+.panel {
+  border: 1px solid #dfddd5;
+  background: #fffefa;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgb(35 45 40 / 6%);
+}
+
+.metric-card {
+  min-height: 86px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.metric-card span {
+  color: #667069;
+  font-size: 13px;
+}
+
+.metric-card strong {
+  font-size: 20px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.metric-card.green strong {
+  color: #167248;
+}
+
+.metric-card.red strong {
+  color: #b42318;
+}
+
+.metric-card.blue strong {
+  color: #1d5f9f;
+}
+
+.metric-card.orange strong {
+  color: #b45309;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 360px minmax(420px, 1fr) 310px;
+  gap: 16px;
+  align-items: start;
+}
+
+.left-column,
+.right-column {
+  display: grid;
+  gap: 16px;
+}
+
+.panel {
+  padding: 16px;
+}
+
+.ledger-panel {
+  min-height: 604px;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: #26312c;
+}
+
+.panel-title h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.transaction-form .segmented,
+.wide {
+  grid-column: 1 / -1;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #5d665f;
+  font-size: 13px;
+}
+
+input,
+select {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #d6d2c8;
+  border-radius: 6px;
+  padding: 0 10px;
+  color: #1e2521;
+  background: #fff;
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: #26725d;
+  box-shadow: 0 0 0 3px rgb(38 114 93 / 15%);
+}
+
+input[type="color"] {
+  padding: 4px;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px;
+  background: #ece9df;
+  border-radius: 8px;
+}
+
+.segmented button {
+  height: 34px;
+  border: 0;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #56615a;
+  background: transparent;
+}
+
+.segmented button.active {
+  color: #10231d;
+  background: #fffefa;
+  box-shadow: 0 1px 2px rgb(26 39 33 / 12%);
+}
+
+.primary-button,
+.secondary-button,
+.icon-button {
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 6px;
+}
+
+.primary-button {
+  height: 40px;
+  background: #14634f;
+  color: #fff;
+}
+
+.secondary-button {
+  height: 38px;
+  width: 100%;
+  background: #26312c;
+  color: #fff;
+}
+
+.icon-button {
+  width: 38px;
+  height: 38px;
+  color: #2f3934;
+  background: #fffefa;
+  border-color: #dfddd5;
+}
+
+.icon-button.small {
+  width: 32px;
+  height: 32px;
+}
+
+.account-list,
+.ledger-list,
+.category-rank {
+  display: grid;
+  gap: 8px;
+}
+
+.account-row,
+.transaction-row,
+.rank-row,
+.empty-row {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #ece8dc;
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+}
+
+.account-row {
+  justify-content: space-between;
+}
+
+.account-row div {
+  display: grid;
+  gap: 2px;
+}
+
+.account-row strong,
+.transaction-main strong,
+.rank-row b {
+  color: #1f2823;
+  font-size: 14px;
+}
+
+.account-row span,
+.transaction-main span {
+  color: #6c746e;
+  font-size: 12px;
+}
+
+.account-row b,
+.transaction-row b,
+.rank-row strong {
+  color: #202822;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.transaction-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto 32px;
+}
+
+.transaction-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #ece9df;
+  color: #48534d;
+}
+
+.transaction-row.expense .transaction-icon {
+  background: #fff1e6;
+  color: #b45309;
+}
+
+.transaction-row.income .transaction-icon {
+  background: #eaf7ef;
+  color: #167248;
+}
+
+.transaction-row.transfer .transaction-icon {
+  background: #e8f1fa;
+  color: #1d5f9f;
+}
+
+.transaction-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.transaction-main strong,
+.transaction-main span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-row {
+  justify-content: space-between;
+}
+
+.rank-row span {
+  width: 10px;
+  height: 28px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.rank-row b {
+  flex: 1;
+}
+
+.compact-form {
+  display: grid;
+  gap: 10px;
+}
+
+.two-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.empty-row {
+  justify-content: center;
+  color: #778078;
+  font-size: 13px;
+}
+
+.error-banner {
+  margin-bottom: 16px;
+  border: 1px solid #f3b6b6;
+  color: #8a1f1f;
+  background: #fff2f2;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+@media (max-width: 1160px) {
+  body {
+    min-width: 0;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 14px;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form-grid,
+  .two-fields {
+    grid-template-columns: 1fr;
+  }
+}
