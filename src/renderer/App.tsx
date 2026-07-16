@@ -2,17 +2,24 @@ import {
   ArrowDownLeft,
   ArrowRightLeft,
   ArrowUpRight,
+  Bot,
+  CheckCircle2,
+  FileText,
   Landmark,
   Plus,
   RefreshCw,
+  Sparkles,
   Tags,
   Trash2,
+  Upload,
   WalletCards
 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import type {
   Account,
   AccountInput,
+  AgentDraftTransaction,
+  AgentSourceType,
   Category,
   CategoryInput,
   LedgerState,
@@ -58,6 +65,11 @@ export function App() {
   const [databasePath, setDatabasePath] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [agentSourceType, setAgentSourceType] = useState<AgentSourceType>("plain-text");
+  const [agentText, setAgentText] = useState("");
+  const [agentDrafts, setAgentDrafts] = useState<AgentDraftTransaction[]>([]);
+  const [agentNotes, setAgentNotes] = useState<string[]>([]);
+  const [agentLoading, setAgentLoading] = useState(false);
   const [transaction, setTransaction] = useState<TransactionInput>({
     type: "expense",
     accountId: "",
@@ -168,6 +180,95 @@ export function App() {
     }
   }
 
+  async function readAgentFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setError("");
+    try {
+      const text = await file.text();
+      setAgentText(text);
+      const lowerName = file.name.toLowerCase();
+      if (lowerName.includes("微信") || lowerName.includes("wechat")) {
+        setAgentSourceType("wechat");
+      } else if (lowerName.includes("支付宝") || lowerName.includes("alipay")) {
+        setAgentSourceType("alipay");
+      } else {
+        setAgentSourceType("plain-text");
+      }
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  async function parseWithAgent() {
+    setError("");
+    setAgentNotes([]);
+    if (!agentText.trim()) {
+      setError("请先粘贴口述内容或上传账单文件");
+      return;
+    }
+
+    setAgentLoading(true);
+    try {
+      const result = await window.moneyPig.parseTransactionsWithAgent({
+        sourceType: agentSourceType,
+        content: agentText
+      });
+      setAgentDrafts(result.drafts);
+      setAgentNotes([`${result.provider === "minimax" ? "Minimax" : "本地解析"} 生成 ${result.drafts.length} 条草稿`, ...result.notes]);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setAgentLoading(false);
+    }
+  }
+
+  async function commitAgentDrafts() {
+    setError("");
+    const validDrafts = agentDrafts.filter(isDraftReady);
+    if (validDrafts.length === 0) {
+      setError("没有可确认写入的草稿");
+      return;
+    }
+
+    try {
+      const nextState = await window.moneyPig.createTransactions(
+        validDrafts.map(({ id: _id, source: _source, confidence: _confidence, warnings: _warnings, ...input }) => ({
+          ...input,
+          amount: Number(input.amount)
+        }))
+      );
+      setState(nextState);
+      setAgentDrafts([]);
+      setAgentNotes([`已写入 ${validDrafts.length} 条账目`]);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  function updateAgentDraft(id: string, patch: Partial<AgentDraftTransaction>) {
+    setAgentDrafts((current) =>
+      current.map((draft) =>
+        draft.id === id
+          ? {
+              ...draft,
+              ...patch,
+              warnings: recomputeDraftWarnings({ ...draft, ...patch })
+            }
+          : draft
+      )
+    );
+  }
+
+  function removeAgentDraft(id: string) {
+    setAgentDrafts((current) => current.filter((draft) => draft.id !== id));
+  }
+
   function updateTransactionType(type: TransactionType) {
     const firstCategory = state.categories.find((item) => item.type === type && !item.archived);
     const secondAccount = activeAccounts.find((item) => item.id !== transaction.accountId);
@@ -201,6 +302,92 @@ export function App() {
         <MetricCard label="本月结余" value={state.summary.monthNet} tone="blue" />
         <MetricCard label="本月收入" value={state.summary.monthIncome} tone="green" />
         <MetricCard label="本月支出" value={state.summary.monthExpense} tone="orange" />
+      </section>
+
+      <section className="panel agent-panel">
+        <div className="agent-header">
+          <PanelTitle icon={<Bot size={18} />} title="Agent 记账" />
+          <div className="agent-actions">
+            <label className="file-button">
+              <Upload size={16} />
+              上传账单
+              <input type="file" accept=".txt,.csv,.log,.text" onChange={readAgentFile} />
+            </label>
+            <button className="secondary-button fit" type="button" onClick={parseWithAgent} disabled={agentLoading}>
+              <Sparkles size={16} />
+              {agentLoading ? "解析中" : "生成草稿"}
+            </button>
+            <button
+              className="primary-button fit"
+              type="button"
+              onClick={commitAgentDrafts}
+              disabled={agentDrafts.filter(isDraftReady).length === 0}
+            >
+              <CheckCircle2 size={16} />
+              确认写入
+            </button>
+          </div>
+        </div>
+
+        <div className="agent-input-grid">
+          <label>
+            来源
+            <select
+              value={agentSourceType}
+              onChange={(event) => setAgentSourceType(event.target.value as AgentSourceType)}
+            >
+              <option value="plain-text">普通文本</option>
+              <option value="wechat">微信账单</option>
+              <option value="alipay">支付宝账单</option>
+              <option value="speech">口述</option>
+            </select>
+          </label>
+          <label className="agent-text-field">
+            内容
+            <textarea
+              value={agentText}
+              onChange={(event) => setAgentText(event.target.value)}
+              placeholder="粘贴微信/支付宝账单文本，或输入：昨天午饭 35 元，今天工资到账 12000 元"
+            />
+          </label>
+        </div>
+
+        {agentNotes.length > 0 ? (
+          <div className="agent-notes">
+            {agentNotes.map((note) => (
+              <span key={note}>{note}</span>
+            ))}
+          </div>
+        ) : null}
+
+        {agentDrafts.length > 0 ? (
+          <div className="draft-table">
+            <div className="draft-head">
+              <span>类型</span>
+              <span>日期</span>
+              <span>金额</span>
+              <span>账户</span>
+              <span>分类/转入</span>
+              <span>备注</span>
+              <span />
+            </div>
+            {agentDrafts.map((draft) => (
+              <AgentDraftRow
+                key={draft.id}
+                draft={draft}
+                accounts={activeAccounts}
+                categories={state.categories.filter((item) => !item.archived)}
+                onChange={updateAgentDraft}
+                onRemove={removeAgentDraft}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="agent-empty">
+            <FileText size={17} />
+            等待上传账单或输入口述内容
+          </div>
+        )}
       </section>
 
       <section className="workspace">
@@ -467,6 +654,106 @@ function MetricCard({ label, value, tone }: { label: string; value: number; tone
   );
 }
 
+function AgentDraftRow({
+  draft,
+  accounts,
+  categories,
+  onChange,
+  onRemove
+}: {
+  draft: AgentDraftTransaction;
+  accounts: Account[];
+  categories: Category[];
+  onChange(id: string, patch: Partial<AgentDraftTransaction>): void;
+  onRemove(id: string): void;
+}) {
+  const typedCategories = categories.filter((item) => item.type === draft.type);
+
+  return (
+    <article className={`draft-row ${isDraftReady(draft) ? "" : "invalid"}`}>
+      <select
+        value={draft.type}
+        onChange={(event) => {
+          const type = event.target.value as TransactionType;
+          const category = categories.find((item) => item.type === type);
+          const transferAccount = accounts.find((item) => item.id !== draft.accountId);
+          onChange(draft.id, {
+            type,
+            categoryId: type === "transfer" ? null : category?.id ?? "",
+            transferAccountId: type === "transfer" ? transferAccount?.id ?? "" : null
+          });
+        }}
+      >
+        <option value="expense">支出</option>
+        <option value="income">收入</option>
+        <option value="transfer">转账</option>
+      </select>
+
+      <input
+        type="date"
+        value={draft.occurredOn}
+        onChange={(event) => onChange(draft.id, { occurredOn: event.target.value })}
+      />
+
+      <input
+        type="number"
+        min="0.01"
+        step="0.01"
+        value={draft.amount || ""}
+        onChange={(event) => onChange(draft.id, { amount: Number(event.target.value) })}
+      />
+
+      <select value={draft.accountId} onChange={(event) => onChange(draft.id, { accountId: event.target.value })}>
+        <option value="">账户</option>
+        {accounts.map((item) => (
+          <option key={item.id} value={item.id}>
+            {item.name}
+          </option>
+        ))}
+      </select>
+
+      {draft.type === "transfer" ? (
+        <select
+          value={draft.transferAccountId ?? ""}
+          onChange={(event) => onChange(draft.id, { transferAccountId: event.target.value })}
+        >
+          <option value="">转入账户</option>
+          {accounts
+            .filter((item) => item.id !== draft.accountId)
+            .map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+        </select>
+      ) : (
+        <select value={draft.categoryId ?? ""} onChange={(event) => onChange(draft.id, { categoryId: event.target.value })}>
+          <option value="">分类</option>
+          {typedCategories.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+      )}
+
+      <input value={draft.note ?? ""} onChange={(event) => onChange(draft.id, { note: event.target.value })} />
+
+      <button className="icon-button small" title="移除草稿" onClick={() => onRemove(draft.id)}>
+        <Trash2 size={16} />
+      </button>
+
+      <div className="draft-meta">
+        <span>置信度 {Math.round(draft.confidence * 100)}%</span>
+        <span>{draft.source}</span>
+        {draft.warnings.map((warning) => (
+          <b key={warning}>{warning}</b>
+        ))}
+      </div>
+    </article>
+  );
+}
+
 function PanelTitle({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
     <div className="panel-title">
@@ -525,4 +812,30 @@ function formatDateInput(date: Date) {
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function isDraftReady(draft: AgentDraftTransaction) {
+  if (!draft.accountId || !draft.occurredOn || !Number.isFinite(draft.amount) || draft.amount <= 0) {
+    return false;
+  }
+
+  if (draft.type === "transfer") {
+    return Boolean(draft.transferAccountId && draft.transferAccountId !== draft.accountId);
+  }
+
+  return Boolean(draft.categoryId);
+}
+
+function recomputeDraftWarnings(draft: AgentDraftTransaction) {
+  const warnings: string[] = [];
+  if (!draft.accountId) warnings.push("缺少账户");
+  if (!draft.occurredOn) warnings.push("缺少日期");
+  if (!Number.isFinite(draft.amount) || draft.amount <= 0) warnings.push("金额必须大于 0");
+  if (draft.type === "transfer") {
+    if (!draft.transferAccountId) warnings.push("缺少转入账户");
+    if (draft.transferAccountId && draft.transferAccountId === draft.accountId) warnings.push("转出和转入不能相同");
+  } else if (!draft.categoryId) {
+    warnings.push("缺少分类");
+  }
+  return warnings;
 }
