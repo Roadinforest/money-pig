@@ -1,0 +1,35 @@
+{
+  "name": "money-pig",
+  "version": "0.1.0",
+  "description": "A local-first personal finance ledger built with Electron and SQLite.",
+  "private": true,
+  "type": "module",
+  "main": "dist/main/main.js",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "dev:electron": "concurrently -k \"vite --host 127.0.0.1\" \"tsc -p tsconfig.node.json --watch --preserveWatchOutput\" \"wait-on tcp:5173 dist/main/main.js && MONEY_PIG_DEV_SERVER_URL=http://127.0.0.1:5173 electron --no-sandbox .\"",
+    "build": "tsc -p tsconfig.node.json && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "start": "electron --no-sandbox .",
+    "smoke:electron": "node scripts/smoke-electron.mjs",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit"
+  },
+  "dependencies": {
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sql.js": "^1.12.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "@types/sql.js": "^1.4.9",
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "wait-on": "^8.0.1"
+  }
+}
