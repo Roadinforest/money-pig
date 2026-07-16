@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu, shell } from "electron";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { connect } from "node:net";
+import { LedgerAgent } from "./agent.js";
 import { LedgerRepository } from "./database.js";
 import { registerLedgerIpc } from "./ipc.js";
 
@@ -53,7 +54,14 @@ async function reportSmokeStatus(window: BrowserWindow): Promise<void> {
   }
 
   const hasApi = await window.webContents.executeJavaScript(
-    "Boolean(window.moneyPig && typeof window.moneyPig.getState === 'function')"
+    [
+      "Boolean(",
+      "window.moneyPig",
+      "&& typeof window.moneyPig.getState === 'function'",
+      "&& typeof window.moneyPig.createTransactions === 'function'",
+      "&& typeof window.moneyPig.parseTransactionsWithAgent === 'function'",
+      ")"
+    ].join(" ")
   );
   const socket = connect(Number(smokePort), "127.0.0.1", () => {
     socket.end(hasApi ? "ok" : "missing-api");
@@ -63,7 +71,8 @@ async function reportSmokeStatus(window: BrowserWindow): Promise<void> {
 
 app.whenReady().then(async () => {
   const repository = await LedgerRepository.open(app.getPath("userData"));
-  registerLedgerIpc(repository);
+  const agent = new LedgerAgent(repository);
+  registerLedgerIpc(repository, agent);
 
   await createWindow();
 

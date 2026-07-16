@@ -116,26 +116,26 @@ export class LedgerRepository {
   }
 
   createTransaction(input: TransactionInput): LedgerState {
-    this.validateTransaction(input);
-    const now = isoNow();
+    this.insertTransaction(input);
+    this.persist();
+    return this.getState();
+  }
 
-    this.run(
-      `insert into transactions
-        (id, type, account_id, transfer_account_id, category_id, amount_cents, occurred_on, note, created_at, updated_at)
-       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        crypto.randomUUID(),
-        input.type,
-        input.accountId,
-        input.type === "transfer" ? input.transferAccountId ?? null : null,
-        input.type === "transfer" ? null : input.categoryId ?? null,
-        toCents(input.amount),
-        input.occurredOn,
-        input.note?.trim() ?? "",
-        now,
-        now
-      ]
-    );
+  createTransactions(inputs: TransactionInput[]): LedgerState {
+    if (inputs.length === 0) {
+      throw new Error("没有可写入的交易");
+    }
+
+    this.db.run("begin");
+    try {
+      for (const input of inputs) {
+        this.insertTransaction(input);
+      }
+      this.db.run("commit");
+    } catch (error) {
+      this.db.run("rollback");
+      throw error;
+    }
 
     this.persist();
     return this.getState();
@@ -373,6 +373,29 @@ export class LedgerRepository {
     if (!category) {
       throw new Error("分类不存在或类型不匹配");
     }
+  }
+
+  private insertTransaction(input: TransactionInput): void {
+    this.validateTransaction(input);
+    const now = isoNow();
+
+    this.run(
+      `insert into transactions
+        (id, type, account_id, transfer_account_id, category_id, amount_cents, occurred_on, note, created_at, updated_at)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        crypto.randomUUID(),
+        input.type,
+        input.accountId,
+        input.type === "transfer" ? input.transferAccountId ?? null : null,
+        input.type === "transfer" ? null : input.categoryId ?? null,
+        toCents(input.amount),
+        input.occurredOn,
+        input.note?.trim() ?? "",
+        now,
+        now
+      ]
+    );
   }
 
   private all<T extends object>(sql: string, params: SqlValue[] = []): T[] {
