@@ -43,15 +43,35 @@ money-pig.sqlite3
 
 - 资产、负债、净资产、本月收入、本月支出、本月结余
 - 支出、收入、账户间转账
+- Agent 解析微信账单、支付宝账单、口述文本，生成可编辑草稿
+- 用户确认草稿后批量写入数据库
 - 默认账户和常用收支分类
 - 新增账户、新增分类
 - 最近 200 条流水
 - 本月支出分类排行
 - 删除流水
 
+## Minimax Agent
+
+Agent 默认读取环境变量调用 Minimax：
+
+```bash
+MINIMAX_API_KEY=your-key pnpm start
+```
+
+可选配置：
+
+```bash
+MINIMAX_BASE_URL=https://api.minimax.io/v1/chat/completions
+MINIMAX_MODEL=MiniMax-M1
+```
+
+如果没有配置 `MINIMAX_API_KEY`，应用会使用本地启发式解析，仍然能完成“上传/口述 -> 草稿 -> 用户确认 -> 写入”的流程。Agent 不会直接写数据库，只有用户点击“确认写入”后，草稿才会批量落库。
+
 ## 可扩展边界
 
 - `src/main/database.ts`：账本仓储和 SQLite schema。后续可以替换为 `better-sqlite3`、加迁移版本、预算表、周期账单表。
+- `src/main/agent.ts`：Agent 编排、Minimax 调用、本地解析 fallback、草稿规范化。
 - `src/main/ipc.ts`：桌面 API 边界。新增能力先在 shared 类型里定义，再注册 IPC handler。
 - `src/shared/types.ts`：主进程和渲染层共享领域类型。
 - `src/renderer/App.tsx`：当前 UI。后续可以拆成 `features/transactions`、`features/accounts`、`features/reports`。
