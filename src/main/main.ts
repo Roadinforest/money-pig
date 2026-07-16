@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, Menu, shell } from "electron";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { connect } from "node:net";
@@ -11,6 +11,8 @@ const __dirname = dirname(__filename);
 let mainWindow: BrowserWindow | null = null;
 
 async function createWindow(): Promise<void> {
+  Menu.setApplicationMenu(null);
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 820,
@@ -18,6 +20,7 @@ async function createWindow(): Promise<void> {
     minHeight: 680,
     title: "Money Pig",
     backgroundColor: "#f6f4ef",
+    autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, "../preload/preload.cjs"),
       contextIsolation: true,
