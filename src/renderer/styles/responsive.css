@@ -1,0 +1,115 @@
+/* Responsive breakpoints — kept in one file because they tweak selectors
+   across multiple feature modules. */
+
+@media (max-width: 1280px) {
+  .draft-head {
+    display: none;
+  }
+
+  .draft-row {
+    grid-template-columns: minmax(120px, 0.8fr) minmax(160px, 1fr) minmax(120px, 0.8fr) minmax(150px, 1fr) 32px;
+  }
+
+  .draft-row > input:nth-of-type(2) {
+    grid-column: 1 / -2;
+  }
+}
+
+@media (max-width: 1160px) {
+  body {
+    min-width: 0;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-summary-grid,
+  .stats-pies {
+    grid-template-columns: 1fr;
+  }
+
+  .accounts-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .account-edit-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-edit-row .account-row-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .agent-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-settings-panel {
+    position: static;
+  }
+
+  .agent-header,
+  .agent-input-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .agent-actions {
+    justify-content: flex-start;
+  }
+
+  .draft-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) 32px;
+  }
+
+  .draft-row input:nth-of-type(2) {
+    grid-column: 1 / 3;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 14px;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tabbar {
+    display: grid;
+  }
+
+  .form-grid,
+  .two-fields,
+  .pie-chart,
+  .account-manage-row,
+  .account-edit-row,
+  .account-bar-row,
+  .draft-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pie-visual {
+    width: min(220px, 100%);
+    justify-self: center;
+  }
+
+  .account-row-actions {
+    justify-content: flex-start;
+  }
+
+  .draft-row .icon-button {
+    justify-self: end;
+  }
+}

@@ -1,0 +1,120 @@
+/* Ledger tab: transaction rows, account rows, category rank rows. */
+
+.ledger-panel {
+  min-height: 604px;
+}
+
+.account-list,
+.ledger-list,
+.category-rank {
+  display: grid;
+  gap: 8px;
+}
+
+.account-row,
+.transaction-row,
+.rank-row,
+.empty-row {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #ece8dc;
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+}
+
+.account-row {
+  justify-content: space-between;
+}
+
+.account-row div {
+  display: grid;
+  gap: 2px;
+}
+
+.account-row strong,
+.transaction-main strong,
+.rank-row b {
+  color: #1f2823;
+  font-size: 14px;
+}
+
+.account-row span,
+.transaction-main span {
+  color: #6c746e;
+  font-size: 12px;
+}
+
+.account-row b,
+.transaction-row b,
+.rank-row strong {
+  color: #202822;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.transaction-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto 32px;
+}
+
+.transaction-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #ece9df;
+  color: #48534d;
+}
+
+.transaction-row.expense .transaction-icon {
+  background: #fff1e6;
+  color: #b45309;
+}
+
+.transaction-row.income .transaction-icon {
+  background: #eaf7ef;
+  color: #167248;
+}
+
+.transaction-row.transfer .transaction-icon {
+  background: #e8f1fa;
+  color: #1d5f9f;
+}
+
+.transaction-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.transaction-main strong,
+.transaction-main span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-row {
+  justify-content: space-between;
+}
+
+.rank-row span {
+  width: 10px;
+  height: 28px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.rank-row b {
+  flex: 1;
+}
+
+.empty-row {
+  justify-content: center;
+  color: #778078;
+  font-size: 13px;
+}

@@ -1,0 +1,154 @@
+/* Forms, inputs, and shared button primitives used by every tab. */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.transaction-form .segmented,
+.wide {
+  grid-column: 1 / -1;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #5d665f;
+  font-size: 13px;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  border: 1px solid #d6d2c8;
+  border-radius: 6px;
+  color: #1e2521;
+  background: #fff;
+  outline: none;
+}
+
+input,
+select {
+  height: 38px;
+  padding: 0 10px;
+}
+
+textarea {
+  min-height: 96px;
+  resize: vertical;
+  padding: 10px;
+  line-height: 1.45;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #26725d;
+  box-shadow: 0 0 0 3px rgb(38 114 93 / 15%);
+}
+
+input[type="color"] {
+  padding: 4px;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px;
+  background: #ece9df;
+  border-radius: 8px;
+}
+
+.segmented button {
+  height: 34px;
+  border: 0;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #56615a;
+  background: transparent;
+}
+
+.segmented button.active {
+  color: #10231d;
+  background: #fffefa;
+  box-shadow: 0 1px 2px rgb(26 39 33 / 12%);
+}
+
+.primary-button,
+.secondary-button,
+.icon-button {
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 6px;
+}
+
+.primary-button {
+  height: 40px;
+  background: #14634f;
+  color: #fff;
+}
+
+.secondary-button {
+  height: 38px;
+  width: 100%;
+  background: #26312c;
+  color: #fff;
+}
+
+.icon-button {
+  width: 38px;
+  height: 38px;
+  color: #2f3934;
+  background: #fffefa;
+  border-color: #dfddd5;
+}
+
+.icon-button.small {
+  width: 32px;
+  height: 32px;
+}
+
+.primary-button.fit,
+.secondary-button.fit,
+.file-button {
+  width: auto;
+  height: 38px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.file-button {
+  border: 1px solid #d6d2c8;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #2f3934;
+  background: #fff;
+  cursor: pointer;
+}
+
+.file-button input {
+  display: none;
+}
+
+.compact-form {
+  display: grid;
+  gap: 10px;
+}
+
+.two-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}

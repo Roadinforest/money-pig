@@ -1,0 +1,154 @@
+/* App-level layout: shell, top bar, tabbar, panels, summary grid, error banner. */
+
+.app-shell {
+  min-height: 100vh;
+  padding: 22px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+.topbar p {
+  margin: 5px 0 0;
+  max-width: 860px;
+  color: #68706a;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tabbar {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(116px, 1fr));
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  border: 1px solid #dfddd5;
+  border-radius: 8px;
+  background: #ece9df;
+}
+
+.app-tabs {
+  grid-template-columns: repeat(4, minmax(96px, 1fr));
+}
+
+.tabbar button {
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #56615a;
+  background: transparent;
+}
+
+.tabbar button.active {
+  color: #10231d;
+  background: #fffefa;
+  box-shadow: 0 1px 2px rgb(26 39 33 / 12%);
+}
+
+.metric-card,
+.panel {
+  border: 1px solid #dfddd5;
+  background: #fffefa;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgb(35 45 40 / 6%);
+}
+
+.metric-card {
+  min-height: 86px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.metric-card span {
+  color: #667069;
+  font-size: 13px;
+}
+
+.metric-card strong {
+  font-size: 20px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.metric-card.green strong {
+  color: #167248;
+}
+
+.metric-card.red strong {
+  color: #b42318;
+}
+
+.metric-card.blue strong {
+  color: #1d5f9f;
+}
+
+.metric-card.orange strong {
+  color: #b45309;
+}
+
+.panel {
+  padding: 16px;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: #26312c;
+}
+
+.panel-title h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.error-banner {
+  margin-bottom: 16px;
+  border: 1px solid #f3b6b6;
+  color: #8a1f1f;
+  background: #fff2f2;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 360px minmax(420px, 1fr) 310px;
+  gap: 16px;
+  align-items: start;
+}
+
+.left-column,
+.right-column {
+  display: grid;
+  gap: 16px;
+}

@@ -1,0 +1,114 @@
+/* Accounts tab: page grid, workspace, balance chart, management list. */
+
+.accounts-page {
+  display: grid;
+  gap: 16px;
+}
+
+.account-summary-grid {
+  margin-bottom: 0;
+}
+
+.accounts-workspace {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.accounts-chart-panel {
+  min-height: 248px;
+}
+
+.account-balance-chart {
+  display: grid;
+  gap: 10px;
+}
+
+.account-bar-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 150px) minmax(120px, 1fr) minmax(120px, auto);
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  color: #5d665f;
+  font-size: 13px;
+}
+
+.account-bar-row span,
+.account-bar-row strong {
+  overflow-wrap: anywhere;
+}
+
+.account-bar-row div {
+  height: 10px;
+  border-radius: 999px;
+  background: #ece9df;
+  overflow: hidden;
+}
+
+.account-bar-row i {
+  display: block;
+  height: 100%;
+  min-width: 8px;
+  border-radius: inherit;
+  background: #26725d;
+}
+
+.account-management-list {
+  display: grid;
+  gap: 8px;
+}
+
+.account-manage-row,
+.account-edit-row {
+  border: 1px solid #ece8dc;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+  display: grid;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.account-manage-row {
+  grid-template-columns: minmax(160px, 1fr) minmax(120px, auto) auto;
+}
+
+.account-manage-row.archived {
+  opacity: 0.62;
+}
+
+.account-manage-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.account-manage-main strong,
+.account-manage-main span,
+.account-manage-row b {
+  overflow-wrap: anywhere;
+}
+
+.account-manage-main span {
+  color: #68706a;
+  font-size: 12px;
+}
+
+.account-edit-row {
+  grid-template-columns: minmax(150px, 1fr) 140px 96px 120px auto;
+}
+
+.account-edit-row > input,
+.account-edit-row > select {
+  min-width: 0;
+}
+
+.account-row-actions {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
