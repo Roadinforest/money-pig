@@ -1,10 +1,22 @@
 import { ipcMain } from "electron";
-import type { AccountInput, AgentParseRequest, CategoryInput, TransactionInput } from "../shared/types.js";
+import type {
+  AccountInput,
+  AccountUpdateInput,
+  AgentParseRequest,
+  AgentSettings,
+  CategoryInput,
+  TransactionInput
+} from "../shared/types.js";
 import { IPC_CHANNELS } from "../shared/types.js";
 import type { LedgerAgent } from "./agent.js";
 import type { LedgerRepository } from "./database.js";
+import type { SettingsRepository } from "./settings.js";
 
-export function registerLedgerIpc(repository: LedgerRepository, agent: LedgerAgent): void {
+export function registerLedgerIpc(
+  repository: LedgerRepository,
+  agent: LedgerAgent,
+  settings: SettingsRepository
+): void {
   ipcMain.handle(IPC_CHANNELS.getState, () => repository.getState());
   ipcMain.handle(IPC_CHANNELS.getDatabasePath, () => repository.getDatabasePath());
 
@@ -20,9 +32,19 @@ export function registerLedgerIpc(repository: LedgerRepository, agent: LedgerAge
 
   ipcMain.handle(IPC_CHANNELS.createAccount, (_event, input: AccountInput) => repository.createAccount(input));
 
+  ipcMain.handle(IPC_CHANNELS.updateAccount, (_event, input: AccountUpdateInput) => repository.updateAccount(input));
+
+  ipcMain.handle(IPC_CHANNELS.deleteAccount, (_event, id: string) => repository.deleteAccount(id));
+
   ipcMain.handle(IPC_CHANNELS.createCategory, (_event, input: CategoryInput) => repository.createCategory(input));
 
   ipcMain.handle(IPC_CHANNELS.parseTransactionsWithAgent, (_event, input: AgentParseRequest) =>
     agent.parseTransactions(input)
+  );
+
+  ipcMain.handle(IPC_CHANNELS.getAgentSettings, () => settings.getAgentSettings());
+
+  ipcMain.handle(IPC_CHANNELS.saveAgentSettings, (_event, input: AgentSettings) =>
+    settings.saveAgentSettings(input)
   );
 }

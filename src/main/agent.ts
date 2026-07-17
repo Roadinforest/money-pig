@@ -9,6 +9,7 @@ import type {
   TransactionType
 } from "../shared/types.js";
 import type { LedgerRepository } from "./database.js";
+import type { SettingsRepository } from "./settings.js";
 
 interface ModelDraft {
   type: TransactionType;
@@ -22,47 +23,83 @@ interface ModelDraft {
   confidence?: number;
 }
 
-const DEFAULT_MINIMAX_BASE_URL = "https://api.minimax.io/v1/chat/completions";
+interface MinimaxRequestDebug {
+  baseUrl: string;
+  model: string;
+  sourceType: AgentParseRequest["sourceType"];
+  contentLength: number;
+  imageCount: number;
+  apiKey: string;
+}
+
+const DEFAULT_MINIMAX_BASE_URL = "https://api.minimaxi.com/v1/chat/completions";
 const DEFAULT_MINIMAX_MODEL = "MiniMax-M1";
 
 export class LedgerAgent {
-  constructor(private readonly repository: LedgerRepository) {}
+  constructor(
+    private readonly repository: LedgerRepository,
+    private readonly settings: SettingsRepository
+  ) {}
 
   async parseTransactions(input: AgentParseRequest): Promise<AgentParseResult> {
     const state = this.repository.getState();
     const notes: string[] = [];
 
-    if (process.env.MINIMAX_API_KEY) {
+    const agentSettings = this.settings.getAgentSettings();
+    const apiKey = agentSettings.apiKey || process.env.MINIMAX_API_KEY;
+
+    if (apiKey) {
+      const baseUrl = resolveMinimaxEndpoint(agentSettings.baseUrl || process.env.MINIMAX_BASE_URL);
+      const model = agentSettings.model || process.env.MINIMAX_MODEL || DEFAULT_MINIMAX_MODEL;
+      const debug = buildMinimaxDebug(input, { apiKey, baseUrl, model });
+      notes.push(`Minimax 请求：${formatMinimaxDebug(debug)}`);
+
       try {
-        const drafts = await parseWithMinimax(input, state);
+        const drafts = await parseWithMinimax(input, state, {
+          apiKey,
+          baseUrl,
+          model
+        });
         return {
           provider: "minimax",
           drafts: normalizeDrafts(drafts, state),
           notes
         };
       } catch (error) {
-        notes.push(`Minimax 解析失败，已切换本地解析：${errorMessage(error)}`);
+        const message = errorMessage(error);
+        console.warn("[MoneyPig Agent] Minimax parse failed", {
+          ...debug,
+          apiKey: maskApiKey(debug.apiKey),
+          error: message
+        });
+        notes.push(`Minimax 解析失败，已切换本地解析：${message}`);
       }
+    } else if (getImageDataUrls(input).length > 0) {
+      notes.push("未配置 Minimax API Key，图片无法本地识别。");
     } else {
-      notes.push("未配置 MINIMAX_API_KEY，已使用本地解析。");
+      notes.push("未配置 Minimax API Key，已使用本地解析。");
     }
 
     return {
       provider: "local",
-      drafts: parseLocally(input, state),
+      drafts: getImageDataUrls(input).length > 0 ? [] : parseLocally(input, state),
       notes
     };
   }
 }
 
-async function parseWithMinimax(input: AgentParseRequest, state: LedgerState): Promise<ModelDraft[]> {
-  const baseUrl = process.env.MINIMAX_BASE_URL ?? DEFAULT_MINIMAX_BASE_URL;
-  const model = process.env.MINIMAX_MODEL ?? DEFAULT_MINIMAX_MODEL;
+async function parseWithMinimax(
+  input: AgentParseRequest,
+  state: LedgerState,
+  settings: { apiKey: string; baseUrl?: string; model?: string }
+): Promise<ModelDraft[]> {
+  const baseUrl = resolveMinimaxEndpoint(settings.baseUrl);
+  const model = settings.model || DEFAULT_MINIMAX_MODEL;
   const response = await fetch(baseUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.MINIMAX_API_KEY}`
+      Authorization: `Bearer ${settings.apiKey}`
     },
     body: JSON.stringify({
       model,
@@ -71,17 +108,15 @@ async function parseWithMinimax(input: AgentParseRequest, state: LedgerState): P
           role: "system",
           content: buildSystemPrompt(state)
         },
-        {
-          role: "user",
-          content: `来源类型：${input.sourceType}\n\n原始内容：\n${input.content}`
-        }
+        buildUserMessage(input)
       ],
       temperature: 0.1
     })
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    const body = await response.text();
+    throw new Error(`HTTP ${response.status}: ${summarizeResponseBody(body)}`);
   }
 
   const payload = (await response.json()) as {
@@ -101,6 +136,99 @@ async function parseWithMinimax(input: AgentParseRequest, state: LedgerState): P
   return parsed.transactions as ModelDraft[];
 }
 
+function buildUserMessage(input: AgentParseRequest): {
+  role: "user";
+  content: string | Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }>;
+} {
+  const text = [
+    `来源类型：${input.sourceType}`,
+    "请从内容中提取记账草稿；如果是图片，请先识别图片中的账单、聊天记录、支付截图或口述截图文字。",
+    "",
+    "原始内容：",
+    input.content || "(无文本，仅图片)"
+  ].join("\n");
+
+  const imageDataUrls = getImageDataUrls(input);
+  if (imageDataUrls.length === 0) {
+    return {
+      role: "user",
+      content: text
+    };
+  }
+
+  return {
+    role: "user",
+    content: [
+      { type: "text", text },
+      ...imageDataUrls.map((url) => ({ type: "image_url" as const, image_url: { url } }))
+    ]
+  };
+}
+
+function getImageDataUrls(input: AgentParseRequest): string[] {
+  return input.imageDataUrls?.length ? input.imageDataUrls : input.imageDataUrl ? [input.imageDataUrl] : [];
+}
+
+function resolveMinimaxEndpoint(baseUrl: string | undefined): string {
+  const trimmed = baseUrl?.trim();
+  if (!trimmed) {
+    return DEFAULT_MINIMAX_BASE_URL;
+  }
+
+  const withoutTrailingSlash = trimmed.replace(/\/+$/, "");
+  if (withoutTrailingSlash.endsWith("/v1")) {
+    return `${withoutTrailingSlash}/chat/completions`;
+  }
+
+  return withoutTrailingSlash;
+}
+
+function buildMinimaxDebug(
+  input: AgentParseRequest,
+  settings: { apiKey: string; baseUrl: string; model: string }
+): MinimaxRequestDebug {
+  return {
+    baseUrl: settings.baseUrl,
+    model: settings.model,
+    sourceType: input.sourceType,
+    contentLength: input.content.length,
+    imageCount: getImageDataUrls(input).length,
+    apiKey: settings.apiKey
+  };
+}
+
+function formatMinimaxDebug(debug: MinimaxRequestDebug): string {
+  return [
+    `URL=${debug.baseUrl}`,
+    `model=${debug.model}`,
+    `source=${debug.sourceType}`,
+    `chars=${debug.contentLength}`,
+    `images=${debug.imageCount}`,
+    `key=${maskApiKey(debug.apiKey)}`
+  ].join("，");
+}
+
+function maskApiKey(apiKey: string): string {
+  const trimmed = apiKey.trim();
+  if (!trimmed) {
+    return "empty";
+  }
+  if (trimmed.length <= 8) {
+    return `set(${trimmed.length})`;
+  }
+
+  return `set(...${trimmed.slice(-4)})`;
+}
+
+function summarizeResponseBody(body: string): string {
+  const compact = body.replace(/\s+/g, " ").trim();
+  if (!compact) {
+    return "(empty response body)";
+  }
+
+  return compact.length > 300 ? `${compact.slice(0, 300)}...` : compact;
+}
+
 function buildSystemPrompt(state: LedgerState): string {
   const accounts = state.accounts
     .filter((account) => !account.archived)
@@ -114,6 +242,7 @@ function buildSystemPrompt(state: LedgerState): string {
   return [
     "你是 Money Pig 的本地记账 Agent，只负责从微信账单、支付宝账单、用户口述文本中提取候选账目。",
     "你不能写入数据库，只能返回 JSON 草稿，由用户确认后再入库。",
+    `当前日期：${todayText()}。遇到“今天”必须使用当前日期，“昨天/前天/明天/后天”必须基于当前日期计算。`,
     `可用账户：${accounts}`,
     `可用分类：${categories}`,
     "输出必须是严格 JSON，不要 Markdown，不要解释。",
@@ -137,13 +266,13 @@ function parseLocally(input: AgentParseRequest, state: LedgerState): AgentDraftT
     }
 
     const type = inferType(line);
-    const occurredOn = extractDate(line) ?? todayText();
+    const occurredOn = resolveDateFromText(line) ?? todayText();
     const account = matchAccount(line, state.accounts) ?? firstActiveAccount(state.accounts);
     const category =
       type === "transfer" ? null : matchCategory(line, state.categories, type) ?? firstCategory(state.categories, type);
     const warnings: string[] = [];
 
-    if (!extractDate(line)) {
+    if (!resolveDateFromText(line)) {
       warnings.push("未识别日期，已使用今天");
     }
     if (!matchAccount(line, state.accounts)) {
@@ -210,7 +339,7 @@ function normalizeDrafts(drafts: ModelDraft[], state: LedgerState): AgentDraftTr
         transferAccountId: transferAccount?.id ?? null,
         categoryId: category?.id ?? null,
         amount: Number(draft.amount),
-        occurredOn: normalizeDate(draft.occurredOn) ?? todayText(),
+        occurredOn: resolveDateFromText(source) ?? resolveDateFromText(draft.note ?? "") ?? normalizeDate(draft.occurredOn) ?? todayText(),
         note: draft.note?.trim() || source,
         source,
         confidence: clamp(Number(draft.confidence ?? 0.76), 0, 1),
@@ -284,6 +413,30 @@ function extractDate(text: string): string | null {
   return null;
 }
 
+function resolveDateFromText(text: string): string | null {
+  return extractDate(text) ?? extractRelativeDate(text);
+}
+
+function extractRelativeDate(text: string): string | null {
+  if (/前天/.test(text)) {
+    return dateOffsetText(-2);
+  }
+  if (/昨天|昨日/.test(text)) {
+    return dateOffsetText(-1);
+  }
+  if (/今天|今日/.test(text)) {
+    return dateOffsetText(0);
+  }
+  if (/明天|明日/.test(text)) {
+    return dateOffsetText(1);
+  }
+  if (/后天/.test(text)) {
+    return dateOffsetText(2);
+  }
+
+  return null;
+}
+
 function normalizeDate(value: string | undefined): string | null {
   if (!value) {
     return null;
@@ -341,7 +494,12 @@ function cleanNote(text: string): string {
 }
 
 function todayText(): string {
+  return dateOffsetText(0);
+}
+
+function dateOffsetText(offsetDays: number): string {
   const now = new Date();
+  now.setDate(now.getDate() + offsetDays);
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 

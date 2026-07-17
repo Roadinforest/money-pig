@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import type {
   Account,
   AccountInput,
+  AccountUpdateInput,
   Category,
   CategoryInput,
   DashboardSummary,
@@ -86,6 +87,54 @@ export class LedgerRepository {
         now
       ]
     );
+
+    this.persist();
+    return this.getState();
+  }
+
+  updateAccount(input: AccountUpdateInput): LedgerState {
+    assertNonEmpty(input.id, "账户 ID 不能为空");
+    assertNonEmpty(input.name, "账户名称不能为空");
+    assertNonEmpty(input.currency, "币种不能为空");
+    const existing = this.get<{ id: string }>("select id from accounts where id = ?", [input.id]);
+    if (!existing) {
+      throw new Error("账户不存在");
+    }
+
+    this.run(
+      `update accounts
+       set name = ?, kind = ?, currency = ?, opening_balance_cents = ?, updated_at = ?
+       where id = ?`,
+      [
+        input.name.trim(),
+        input.kind,
+        input.currency.trim().toUpperCase(),
+        toCents(input.openingBalance),
+        isoNow(),
+        input.id
+      ]
+    );
+
+    this.persist();
+    return this.getState();
+  }
+
+  deleteAccount(id: string): LedgerState {
+    assertNonEmpty(id, "账户 ID 不能为空");
+    const existing = this.get<{ id: string }>("select id from accounts where id = ?", [id]);
+    if (!existing) {
+      throw new Error("账户不存在");
+    }
+
+    const references = this.get<{ count: number }>(
+      "select count(*) as count from transactions where account_id = ? or transfer_account_id = ?",
+      [id, id]
+    );
+    if ((references?.count ?? 0) > 0) {
+      this.run("update accounts set archived = 1, updated_at = ? where id = ?", [isoNow(), id]);
+    } else {
+      this.run("delete from accounts where id = ?", [id]);
+    }
 
     this.persist();
     return this.getState();

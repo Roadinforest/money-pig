@@ -5,6 +5,7 @@ import { connect } from "node:net";
 import { LedgerAgent } from "./agent.js";
 import { LedgerRepository } from "./database.js";
 import { registerLedgerIpc } from "./ipc.js";
+import { SettingsRepository } from "./settings.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,6 +36,18 @@ async function createWindow(): Promise<void> {
     return { action: "deny" };
   });
 
+  mainWindow.webContents.on("before-input-event", (event, input) => {
+    const isDevToolsShortcut =
+      input.key === "F11" || input.key === "F12" || (input.control && input.shift && input.key.toLowerCase() === "i");
+
+    if (!isDevToolsShortcut) {
+      return;
+    }
+
+    event.preventDefault();
+    mainWindow?.webContents.toggleDevTools();
+  });
+
   const devServerUrl = process.env.MONEY_PIG_DEV_SERVER_URL;
 
   if (devServerUrl) {
@@ -60,6 +73,8 @@ async function reportSmokeStatus(window: BrowserWindow): Promise<void> {
       "&& typeof window.moneyPig.getState === 'function'",
       "&& typeof window.moneyPig.createTransactions === 'function'",
       "&& typeof window.moneyPig.parseTransactionsWithAgent === 'function'",
+      "&& typeof window.moneyPig.getAgentSettings === 'function'",
+      "&& typeof window.moneyPig.saveAgentSettings === 'function'",
       ")"
     ].join(" ")
   );
@@ -71,8 +86,9 @@ async function reportSmokeStatus(window: BrowserWindow): Promise<void> {
 
 app.whenReady().then(async () => {
   const repository = await LedgerRepository.open(app.getPath("userData"));
-  const agent = new LedgerAgent(repository);
-  registerLedgerIpc(repository, agent);
+  const settings = SettingsRepository.open(app.getPath("userData"));
+  const agent = new LedgerAgent(repository, settings);
+  registerLedgerIpc(repository, agent, settings);
 
   await createWindow();
 

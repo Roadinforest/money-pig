@@ -76,11 +76,13 @@ export interface TransactionInput {
   note?: string;
 }
 
-export type AgentSourceType = "wechat" | "alipay" | "speech" | "plain-text";
+export type AgentSourceType = "wechat" | "alipay" | "speech" | "plain-text" | "image";
 
 export interface AgentParseRequest {
   sourceType: AgentSourceType;
   content: string;
+  imageDataUrls?: string[];
+  imageDataUrl?: string;
 }
 
 export interface AgentDraftTransaction extends TransactionInput {
@@ -96,11 +98,23 @@ export interface AgentParseResult {
   notes: string[];
 }
 
+export interface AgentSettings {
+  provider: "minimax";
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  updatedAt: string | null;
+}
+
 export interface AccountInput {
   name: string;
   kind: AccountKind;
   currency: string;
   openingBalance: number;
+}
+
+export interface AccountUpdateInput extends AccountInput {
+  id: string;
 }
 
 export interface CategoryInput {
@@ -116,8 +130,12 @@ export interface MoneyPigApi {
   createTransactions(inputs: TransactionInput[]): Promise<LedgerState>;
   deleteTransaction(id: string): Promise<LedgerState>;
   createAccount(input: AccountInput): Promise<LedgerState>;
+  updateAccount(input: AccountUpdateInput): Promise<LedgerState>;
+  deleteAccount(id: string): Promise<LedgerState>;
   createCategory(input: CategoryInput): Promise<LedgerState>;
   parseTransactionsWithAgent(input: AgentParseRequest): Promise<AgentParseResult>;
+  getAgentSettings(): Promise<AgentSettings>;
+  saveAgentSettings(input: AgentSettings): Promise<AgentSettings>;
   getDatabasePath(): Promise<string>;
 }
 
@@ -127,7 +145,11 @@ export const IPC_CHANNELS = {
   createTransactions: "ledger:create-transactions",
   deleteTransaction: "ledger:delete-transaction",
   createAccount: "ledger:create-account",
+  updateAccount: "ledger:update-account",
+  deleteAccount: "ledger:delete-account",
   createCategory: "ledger:create-category",
   parseTransactionsWithAgent: "agent:parse-transactions",
+  getAgentSettings: "agent:get-settings",
+  saveAgentSettings: "agent:save-settings",
   getDatabasePath: "ledger:get-database-path"
 } as const;
