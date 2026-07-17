@@ -6,6 +6,7 @@ import {
   Bot,
   CheckCircle2,
   CircleDollarSign,
+  ChartPie,
   Edit3,
   FileText,
   Landmark,
@@ -67,7 +68,7 @@ const transactionTypeLabels: Record<TransactionType, string> = {
 
 const today = formatDateInput(new Date());
 
-type AppTab = "ledger" | "accounts" | "agent";
+type AppTab = "ledger" | "accounts" | "stats" | "agent";
 type AgentImage = { id: string; dataUrl: string; name: string };
 
 const defaultAgentSettings: AgentSettings = {
@@ -109,6 +110,7 @@ export function App() {
   });
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [accountDraft, setAccountDraft] = useState<AccountUpdateInput | null>(null);
+  const [statsAccountId, setStatsAccountId] = useState("all");
   const [category, setCategory] = useState<CategoryInput>({
     name: "",
     type: "expense",
@@ -132,6 +134,10 @@ export function App() {
     [state.categories, transaction.type]
   );
   const accountStats = useMemo(() => buildAccountStats(state.accounts), [state.accounts]);
+  const stats = useMemo(
+    () => buildMonthlyStats(state.transactions, state.categories, statsAccountId),
+    [state.transactions, state.categories, statsAccountId]
+  );
 
   async function load() {
     setLoading(true);
@@ -494,6 +500,10 @@ export function App() {
         <button className={activeTab === "accounts" ? "active" : ""} onClick={() => setActiveTab("accounts")}>
           <WalletCards size={17} />
           账户
+        </button>
+        <button className={activeTab === "stats" ? "active" : ""} onClick={() => setActiveTab("stats")}>
+          <BarChart3 size={17} />
+          统计
         </button>
         <button className={activeTab === "agent" ? "active" : ""} onClick={() => setActiveTab("agent")}>
           <Bot size={17} />
@@ -933,6 +943,47 @@ export function App() {
             </div>
           </section>
         </section>
+      ) : activeTab === "stats" ? (
+        <section className="stats-page">
+          <section className="stats-toolbar panel">
+            <PanelTitle icon={<BarChart3 size={18} />} title="统计范围" />
+            <label>
+              账户
+              <select value={statsAccountId} onChange={(event) => setStatsAccountId(event.target.value)}>
+                <option value="all">全部账户</option>
+                {state.accounts.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                    {item.archived ? "（已归档）" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </section>
+
+          <section className="summary-grid stats-summary-grid">
+            <MetricCard label="当月收入" value={stats.monthIncome} tone="green" />
+            <MetricCard label="当月支出" value={stats.monthExpense} tone="orange" />
+            <MetricCard label="当月结余" value={stats.monthNet} tone="blue" />
+            <MetricCard label="流水笔数" value={stats.transactionCount} tone="ink" format="number" />
+          </section>
+
+          <section className="panel stats-line-panel">
+            <PanelTitle icon={<BarChart3 size={18} />} title="当月收支趋势" />
+            <MonthlyLineChart points={stats.dailyPoints} />
+          </section>
+
+          <section className="stats-pies">
+            <section className="panel">
+              <PanelTitle icon={<ChartPie size={18} />} title="支出分类" />
+              <CategoryPieChart slices={stats.expenseSlices} emptyText="暂无支出分类" />
+            </section>
+            <section className="panel">
+              <PanelTitle icon={<ChartPie size={18} />} title="收入分类" />
+              <CategoryPieChart slices={stats.incomeSlices} emptyText="暂无收入分类" />
+            </section>
+          </section>
+        </section>
       ) : (
         <section className="agent-layout">
           <section className="panel agent-settings-panel">
@@ -1108,6 +1159,91 @@ function MetricCard({
       <span>{label}</span>
       <strong>{format === "number" ? value : formatMoney(value)}</strong>
     </article>
+  );
+}
+
+function MonthlyLineChart({
+  points
+}: {
+  points: Array<{ day: number; income: number; expense: number }>;
+}) {
+  const width = 720;
+  const height = 260;
+  const padding = { top: 18, right: 18, bottom: 34, left: 54 };
+  const maxValue = Math.max(...points.flatMap((point) => [point.income, point.expense]), 1);
+  const xFor = (index: number) =>
+    padding.left + (index / Math.max(points.length - 1, 1)) * (width - padding.left - padding.right);
+  const yFor = (value: number) =>
+    height - padding.bottom - (value / maxValue) * (height - padding.top - padding.bottom);
+  const pathFor = (key: "income" | "expense") =>
+    points
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${xFor(index).toFixed(2)} ${yFor(point[key]).toFixed(2)}`)
+      .join(" ");
+  const ticks = [0, Math.round(maxValue / 2), Math.round(maxValue)];
+
+  return (
+    <div className="line-chart">
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="当月收入和支出折线图">
+        {ticks.map((tick) => (
+          <g key={tick}>
+            <line x1={padding.left} x2={width - padding.right} y1={yFor(tick)} y2={yFor(tick)} />
+            <text x={padding.left - 8} y={yFor(tick) + 4} textAnchor="end">
+              {compactMoney(tick)}
+            </text>
+          </g>
+        ))}
+        <path className="income-line" d={pathFor("income")} />
+        <path className="expense-line" d={pathFor("expense")} />
+        {points.map((point, index) =>
+          point.day === 1 || point.day === points.length || point.day % 5 === 0 ? (
+            <text key={point.day} x={xFor(index)} y={height - 9} textAnchor="middle">
+              {point.day}
+            </text>
+          ) : null
+        )}
+      </svg>
+      <div className="chart-legend">
+        <span className="income-dot">收入</span>
+        <span className="expense-dot">支出</span>
+      </div>
+    </div>
+  );
+}
+
+function CategoryPieChart({
+  slices,
+  emptyText
+}: {
+  slices: Array<{ name: string; color: string; total: number; percent: number }>;
+  emptyText: string;
+}) {
+  if (slices.length === 0) {
+    return <div className="empty-row">{emptyText}</div>;
+  }
+
+  let cursor = 0;
+  const gradient = slices
+    .map((slice) => {
+      const start = cursor;
+      cursor += slice.percent;
+      return `${slice.color} ${start}% ${cursor}%`;
+    })
+    .join(", ");
+
+  return (
+    <div className="pie-chart">
+      <div className="pie-visual" style={{ background: `conic-gradient(${gradient})` }} />
+      <div className="pie-legend">
+        {slices.map((slice) => (
+          <div className="pie-legend-row" key={slice.name}>
+            <span style={{ background: slice.color }} />
+            <b>{slice.name}</b>
+            <strong>{formatMoney(slice.total)}</strong>
+            <em>{slice.percent.toFixed(1)}%</em>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1300,6 +1436,96 @@ function buildAccountStats(accounts: Account[]) {
       ratio: Math.max(6, (Math.abs(item.currentBalance) / maxBalance) * 100)
     }))
   };
+}
+
+function buildMonthlyStats(transactions: TransactionView[], categories: Category[], accountId: string) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthPrefix = `${year}-${padNumber(month + 1)}-`;
+  const dailyPoints = Array.from({ length: daysInMonth }, (_, index) => ({
+    day: index + 1,
+    income: 0,
+    expense: 0
+  }));
+  const categoryColors = new Map(categories.map((item) => [item.id, item.color]));
+  const categoryTotals = {
+    income: new Map<string, { name: string; color: string; total: number }>(),
+    expense: new Map<string, { name: string; color: string; total: number }>()
+  };
+  let monthIncome = 0;
+  let monthExpense = 0;
+  let transactionCount = 0;
+
+  for (const transaction of transactions) {
+    if (!transaction.occurredOn.startsWith(monthPrefix) || transaction.type === "transfer") {
+      continue;
+    }
+    if (accountId !== "all" && transaction.accountId !== accountId) {
+      continue;
+    }
+
+    const day = Number(transaction.occurredOn.slice(8, 10));
+    const point = dailyPoints[day - 1];
+    if (!point) {
+      continue;
+    }
+
+    transactionCount += 1;
+    if (transaction.type === "income") {
+      point.income += transaction.amount;
+      monthIncome += transaction.amount;
+    } else {
+      point.expense += transaction.amount;
+      monthExpense += transaction.amount;
+    }
+
+    const bucket = categoryTotals[transaction.type];
+    const name = transaction.categoryName ?? "未分类";
+    const key = transaction.categoryId ?? name;
+    const current = bucket.get(key) ?? {
+      name,
+      color: transaction.categoryColor ?? categoryColors.get(transaction.categoryId ?? "") ?? "#8a928c",
+      total: 0
+    };
+    current.total += transaction.amount;
+    bucket.set(key, current);
+  }
+
+  return {
+    dailyPoints,
+    monthIncome,
+    monthExpense,
+    monthNet: monthIncome - monthExpense,
+    transactionCount,
+    incomeSlices: buildPieSlices([...categoryTotals.income.values()]),
+    expenseSlices: buildPieSlices([...categoryTotals.expense.values()])
+  };
+}
+
+function buildPieSlices(items: Array<{ name: string; color: string; total: number }>) {
+  const sorted = items.filter((item) => item.total > 0).sort((a, b) => b.total - a.total);
+  const total = sorted.reduce((sum, item) => sum + item.total, 0);
+  if (total <= 0) {
+    return [];
+  }
+
+  return sorted.map((item) => ({
+    ...item,
+    percent: (item.total / total) * 100
+  }));
+}
+
+function compactMoney(value: number): string {
+  if (Math.abs(value) >= 10000) {
+    return `${Math.round(value / 1000) / 10}万`;
+  }
+  return String(Math.round(value));
+}
+
+function padNumber(value: number): string {
+  return String(value).padStart(2, "0");
 }
 
 function errorMessage(error: unknown) {
