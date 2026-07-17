@@ -1,35 +1,17 @@
 <claude-mem-context>
 # Memory Context
 
-# [Money-pig] recent context, 2026-07-17 9:30am GMT+8
+# [Money-pig] recent context, 2026-07-17 8:10pm GMT+8
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 40 obs (17,131t read) | 0t work
+Stats: 50 obs (24,403t read) | 0t work
 
 ### Jul 17, 2026
-1638 8:07a 🔵 pnpm start fails with "packages field missing or empty" in Money-pig
-1639 8:10a 🔵 pnpm error: packages field missing or empty in Money-pig project
-1640 " 🔵 Root cause identified: pnpm-workspace.yaml missing packages field
+S975 Resolve pnpm "ERROR packages field missing or empty" error in Money-pig Electron project by migrating onlyBuiltDependencies out of misconfigured pnpm-workspace.yaml (Jul 17, 8:10 AM)
 S974 Diagnose and resolve pnpm "ERROR packages field missing or empty" error when running pnpm start in Money-pig Electron project (Jul 17, 8:10 AM)
-1641 8:12a 🔴 Applied Option A fix: migrated onlyBuiltDependencies into package.json
-1643 " ✅ Re-application of pnpm.onlyBuiltDependencies migration to package.json
-1642 " 🔴 Deleted pnpm-workspace.yaml to complete pnpm error fix
-S975 Resolve pnpm "ERROR packages field missing or empty" error in Money-pig Electron project by migrating onlyBuiltDependencies out of misconfigured pnpm-workspace.yaml (Jul 17, 8:14 AM)
-1644 8:18a 🔵 MiniMax API 404 Error Reported in Vite/Electron Project
-1645 8:19a 🔵 Money-pig MiniMax 404 and F11 DevTools Root Causes Identified
-1646 " 🔴 Fixed MiniMax 404 and F11 DevTools Shortcut in Money-pig
-1648 " ✅ Duplicate Typecheck Run Confirms Stable Build
-1647 8:20a ✅ TypeScript Typecheck Passes After MiniMax and DevTools Fixes
-1649 8:21a 🔵 Renderer Agent UI Confirms Self-Healing URL Migration Path
-1650 " 🔵 Agent Notes Rendered as Pill Badges in Money-pig UI
-1651 8:22a 🟣 Added Minimax Request Debug Instrumentation with Masked API Key
-1652 8:23a 🔵 Renderer defaultAgentSettings Still Contains Legacy MiniMax URL
-1660 8:29a 🟣 Multi-image input requested for Agent bill parsing
-1661 " ✅ Drop file-link rendering for attached images in favor of thumbnail grid
-1662 " 🔴 App window overflow when resized small
 1663 8:36a 🔵 Existing CSS already has responsive breakpoints at 1160px and 720px
 1664 " 🔵 Primary session is in re-read phase after first image-bill patch landed
 1665 " 🟣 AgentParseRequest gains imageDataUrls array field
@@ -52,4 +34,40 @@ S975 Resolve pnpm "ERROR packages field missing or empty" error in Money-pig Ele
 1681 8:39a 🔵 Final post-stripImageFileUrls typecheck passes cleanly
 1683 9:20a 🔄 appendAgentImages and removeAgentImage helpers consolidate state-update logic
 1684 " 🔴 Image count note now reflects total after append, not just the batch size
+1685 9:32a ⚖️ Planned refactor of Money-pig monolith into feature-based structure
+1686 " 🔵 Money-pig repo state confirmed: clean main, 1 commit ahead, standard Electron+Vite layout
+1687 " 🔵 Money-pig src/ has only 12 flat files, no feature folders yet
+1688 " 🔵 Money-pig IPC surface and Electron bootstrap architecture mapped
+1689 9:33a 🔵 Inventory of App.tsx, database.ts, styles.css, agent.ts functions for refactor planning
+1690 " ✅ Created refactor branch refactor/split-modules off main
+1691 " 🔵 Preload/IPC/settings modules are small and already cleanly split; one minor IPC_CHANNELS duplication noted
+1692 9:34a 🔵 App.tsx state model and tab sections mapped for split refactor
+1693 " 🔄 Step 1 of refactor: extracted renderer pure functions to src/renderer/lib/
+1694 9:35a 🔄 Extracted stats computation to features/stats/monthlyStats.ts with new typed interfaces
+1695 " 🔄 Extracted agent draft validation to features/agent/draftValidation.ts
+1696 " 🔄 Added shared label maps and reusable UI components: PanelTitle, MetricCard, IconButton
+1697 9:36a 🔄 Extracted TransactionRow to features/ledger/ using new shared components and lib helpers
+1698 " 🔄 Extracted TransactionForm to features/ledger with self-contained state
+1699 " 🔵 LedgerTab.tsx introduced with broken controlled-state pattern: form inputs silently discard edits
+1700 " 🟣 Statistics dashboard tab committed
+1701 " ⚖️ Plan feature-oriented refactor on a new branch
+1702 7:40p 🔄 App reduced to top-level orchestration
+1703 " 🔄 Renderer CSS split into responsibility-specific files
+1704 " 🔵 New CSS modules are not yet connected
+1705 " 🔵 Agent draft commit validation was weakened
+1706 7:41p 🔄 Renderer stylesheet split completed and activated
+1707 " 🔄 Database infrastructure concerns extracted into modules
+1708 " 🔵 Database extraction is not yet wired into repository
+1709 7:53p 🔄 LedgerRepository migration to modular database layer completed
+1720 7:54p ⚖️ Primary session handed off mid-refactor with user request to continue unfinished tasks
+1721 8:09p 🔄 Refactor committed: App/database/agent decomposed into focused modules with full build verification
+1722 " ✅ Refactor commit verified as HEAD with clean post-commit typecheck
+S976 Structural refactor of Money-pig Electron+React+sql.js app to address file bloat — split renderer into feature tabs, decompose CSS by feature, split src/main/database.ts and src/main/agent.ts into focused modules, preserve back-compat via re-export shims. (Jul 17, 8:09 PM)
+**Investigated**: App.tsx (1595 lines), styles.css (1015 lines), database.ts (581 lines), agent.ts (517 lines) — examined composition and identified extraction seams; ran pnpm typecheck to surface cascading import-path errors in 12 feature files; ran pnpm build to confirm bundle size unchanged after refactor (185.08 kB pre/post); git diff --stat to verify net deletions.
+
+**Learned**: Back-compat shim pattern (1-line `export { X } from "./new/path"`) preserves old import surface so main.ts/ipc.ts require zero changes; composition-root pattern works well for agent.ts (ledger-agent composes minimax-client + local-parser + date-parser); relative path depth changes when moving files deeper — features/X/Y.ts needs `../../../shared/types` not `../../shared/types`; `import type` fails for lucide-react icons when used as values in arrays (need plain `import { Icon }` with `type LucideIcon`); `git add -A` pollutes staging with .claude/ session config — must `git reset HEAD .claude/` before commit.
+
+**Completed**: Single commit b010341 on branch refactor/split-modules with detailed message; 48 files changed (+4031 / −3390); App.tsx 1595→452 lines (now shell+IPC+tab routing only); styles.css 1015 lines split into 9 feature CSS files (base/layout/forms/ledger/accounts/stats/agent/responsive + index entry); database.ts 581→5-line shim + db/ directory (connection, migrations, seed, mappers, money, ledger-repository); agent.ts 517→4-line shim + agent/ directory (ledger-agent, minimax-client, local-parser, date-parser); renderer pure helpers extracted to lib/ (format, files, errors, labels); shared UI extracted to components/ (PanelTitle, MetricCard, IconButton); per-tab feature directories created (ledger, accounts, stats, agent) with chart components (MonthlyLineChart, CategoryPieChart) and stats modules (monthlyStats, accountStats, draftValidation) extracted as pure functions; .claude/settings.json correctly excluded from commit via git reset; pnpm typecheck and pnpm build both pass cleanly post-commit.
+
+**Next Steps**: Active follow-ups pending after commit: (1) fix `isDraftReadyLocal` validation regression in App.tsx — current implementation only checks `accountId && occurredOn && amount > 0` but lost original `isDraftReady` checks for finite amount, category requirement on non-transfer, and distinct destination account on transfer; (2) add Vitest unit tests for pure functions now extracted (date parser relative-date handling, monthlyStats, accountStats, draftValidation, image file URL cleanup); (3) extract IPC registration module at `src/main/ipc/register-ledger-ipc.ts` to slim down the 50-line ipc.ts; (4) once all consumers migrate to new paths, delete the back-compat shims at src/main/agent.ts and src/main/database.ts.
 </claude-mem-context>

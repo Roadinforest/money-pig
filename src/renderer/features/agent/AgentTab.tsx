@@ -88,7 +88,7 @@ export function AgentTab({
             </label>
             <button className="secondary-button fit" type="button" onClick={onParse} disabled={loading}>
               <Sparkles size={16} />
-              {loading ? "解析中" : "生成草稿"}
+              {loading ? "解析中" : "生成账单"}
             </button>
             <button
               className="primary-button fit"

@@ -166,13 +166,46 @@ export function buildSystemPrompt(state: LedgerState): string {
 
 function parseJsonObject(content: string): { transactions?: unknown } {
   const trimmed = content.trim();
-  if (trimmed.startsWith("{")) {
-    return JSON.parse(trimmed) as { transactions?: unknown };
+  const jsonText = extractFirstJsonObject(trimmed);
+  if (!jsonText) throw new Error("响应中未找到 JSON 对象");
+  return JSON.parse(jsonText) as { transactions?: unknown };
+}
+
+function extractFirstJsonObject(content: string): string | null {
+  const start = content.indexOf("{");
+  if (start < 0) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = start; index < content.length; index += 1) {
+    const char = content[index];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+    } else if (char === "{") {
+      depth += 1;
+    } else if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return content.slice(start, index + 1);
+      }
+    }
   }
 
-  const match = trimmed.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error("响应中未找到 JSON 对象");
-  return JSON.parse(match[0]) as { transactions?: unknown };
+  return null;
 }
 
 export function errorMessage(error: unknown): string {
