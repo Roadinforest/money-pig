@@ -5,6 +5,7 @@ import { BarChart3, ChartPie } from "lucide-react";
 import type { Account, Category, TransactionView } from "../../../shared/types";
 import { MetricCard } from "../../components/MetricCard";
 import { PanelTitle } from "../../components/PanelTitle";
+import { Select } from "../../components/Select";
 import { MonthlyLineChart } from "./MonthlyLineChart";
 import { CategoryPieChart } from "./CategoryPieChart";
 import { buildMonthlyStats } from "./monthlyStats";
@@ -30,15 +31,17 @@ export function StatsTab({
         <PanelTitle icon={<BarChart3 size={18} />} title="统计范围" />
         <label>
           账户
-          <select value={accountId} onChange={(event) => onChangeAccount(event.target.value)}>
-            <option value="all">全部账户</option>
-            {accounts.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-                {item.archived ? "（已归档）" : ""}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={accountId}
+            onChange={onChangeAccount}
+            options={[
+              { value: "all", label: "全部账户" },
+              ...accounts.map((item) => ({
+                value: item.id,
+                label: `${item.name}${item.archived ? "（已归档）" : ""}`
+              }))
+            ]}
+          />
         </label>
       </section>
 

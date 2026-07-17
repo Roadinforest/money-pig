@@ -5,6 +5,7 @@ import { FormEvent } from "react";
 import { CheckCircle2, Settings } from "lucide-react";
 import type { AgentSettings } from "../../../shared/types";
 import { PanelTitle } from "../../components/PanelTitle";
+import { Select } from "../../components/Select";
 import { formatDateTime } from "../../lib/format";
 
 export function AgentSettingsPanel({
@@ -24,9 +25,14 @@ export function AgentSettingsPanel({
       <form className="settings-form" onSubmit={onSubmit}>
         <label>
           Provider
-          <select value={settings.provider} disabled>
-            <option value="minimax">Minimax</option>
-          </select>
+          <Select
+            value={settings.provider}
+            onChange={() => {
+              /* provider is fixed in this build */
+            }}
+            disabled
+            options={[{ value: "minimax", label: "Minimax" }]}
+          />
         </label>
         <label>
           API Key

@@ -8,6 +8,7 @@ import { formatMoney } from "../../lib/format";
 import { accountKindLabels } from "../../lib/labels";
 import { PanelTitle } from "../../components/PanelTitle";
 import { IconButton } from "../../components/IconButton";
+import { Select } from "../../components/Select";
 
 export function AccountManagementList({
   accounts,
@@ -65,20 +66,18 @@ export function AccountManagementList({
                 }
                 required
               />
-              <select
+              <Select
                 value={draft.kind}
-                onChange={(event) =>
+                onChange={(kind) =>
                   setDraft((current) =>
-                    current && { ...current, kind: event.target.value as Account["kind"] }
+                    current && { ...current, kind: kind as Account["kind"] }
                   )
                 }
-              >
-                {Object.entries(accountKindLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+                options={Object.entries(accountKindLabels).map(([value, label]) => ({
+                  value,
+                  label
+                }))}
+              />
               <input
                 value={draft.currency}
                 onChange={(event) =>

@@ -27,6 +27,10 @@ select {
   color: #1e2521;
   background: #fff;
   outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
 }
 
 input,
@@ -46,7 +50,9 @@ input:focus,
 textarea:focus,
 select:focus {
   border-color: #26725d;
-  box-shadow: 0 0 0 3px rgb(38 114 93 / 15%);
+  box-shadow:
+    0 0 0 3px rgb(38 114 93 / 15%),
+    0 1px 2px rgb(35 45 40 / 4%);
 }
 
 input[type="color"] {
@@ -151,4 +157,160 @@ input[type="color"] {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+
+/* Custom dropdown — replaces the OS-native select popup so the open menu
+   matches the warm paper aesthetic instead of blue system chrome. */
+.custom-select {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  height: 38px;
+  padding: 0 34px 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #d6d2c8;
+  border-radius: 6px;
+  background: #fff;
+  color: #1e2521;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 1px 2px rgb(35 45 40 / 4%);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.custom-select-trigger:hover:not(:disabled):not(.open) {
+  border-color: #b9b3a3;
+  background-color: #fffefa;
+}
+
+.custom-select-trigger[data-placeholder] .custom-select-label {
+  color: #68706a;
+}
+
+.custom-select-trigger:focus,
+.custom-select.open .custom-select-trigger {
+  border-color: #26725d;
+  box-shadow:
+    0 0 0 3px rgb(38 114 93 / 15%),
+    0 1px 2px rgb(35 45 40 / 4%);
+}
+
+.custom-select-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  background-color: #f3f1ea;
+  box-shadow: none;
+}
+
+.custom-select-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select-chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%) rotate(0deg);
+  color: #5d665f;
+  transition: transform 0.18s ease, color 0.15s ease;
+  pointer-events: none;
+}
+
+.custom-select.open .custom-select-chevron {
+  transform: translateY(-50%) rotate(180deg);
+  color: #26725d;
+}
+
+.custom-select-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: #fffefa;
+  border: 1px solid #dfddd5;
+  border-radius: 8px;
+  box-shadow:
+    0 8px 24px rgb(35 45 40 / 14%),
+    0 1px 2px rgb(35 45 40 / 6%);
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d6d2c8 transparent;
+  animation: custom-select-pop 0.14s ease-out;
+}
+
+@keyframes custom-select-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.custom-select-popup::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-select-popup::-webkit-scrollbar-thumb {
+  background: #d6d2c8;
+  border-radius: 999px;
+}
+
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 5px;
+  color: #1e2521;
+  cursor: pointer;
+  transition:
+    background-color 0.1s ease,
+    color 0.1s ease;
+}
+
+.custom-select-option.active:not(.selected) {
+  background: #f3f1ea;
+}
+
+.custom-select-option.selected {
+  background: #eef8f2;
+  color: #14634f;
+  font-weight: 500;
+}
+
+.custom-select-option.selected.active {
+  background: #d8e4dd;
+}
+
+.custom-select-option-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

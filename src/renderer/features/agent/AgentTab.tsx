@@ -11,6 +11,7 @@ import type {
   Category
 } from "../../../shared/types";
 import { PanelTitle } from "../../components/PanelTitle";
+import { Select } from "../../components/Select";
 import { AgentSettingsPanel } from "./AgentSettingsPanel";
 import { AgentImageInput, type AgentImage } from "./AgentImageInput";
 import { AgentDraftTable } from "./AgentDraftTable";
@@ -105,13 +106,17 @@ export function AgentTab({
         <div className="agent-input-grid" onDragOver={onDragOver} onDrop={onDrop}>
           <label>
             来源
-            <select value={sourceType} onChange={(event) => onChangeSourceType(event.target.value as AgentSourceType)}>
-              <option value="plain-text">普通文本</option>
-              <option value="wechat">微信账单</option>
-              <option value="alipay">支付宝账单</option>
-              <option value="speech">口述</option>
-              <option value="image">图片</option>
-            </select>
+            <Select
+              value={sourceType}
+              onChange={(value) => onChangeSourceType(value as AgentSourceType)}
+              options={[
+                { value: "plain-text", label: "普通文本" },
+                { value: "wechat", label: "微信账单" },
+                { value: "alipay", label: "支付宝账单" },
+                { value: "speech", label: "口述" },
+                { value: "image", label: "图片" }
+              ]}
+            />
           </label>
           <label className="agent-text-field">
             内容

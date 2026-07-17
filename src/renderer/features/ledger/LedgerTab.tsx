@@ -16,6 +16,7 @@ import { formatMoney } from "../../lib/format";
 import { accountKindLabels } from "../../lib/labels";
 import { MetricCard } from "../../components/MetricCard";
 import { PanelTitle } from "../../components/PanelTitle";
+import { Select } from "../../components/Select";
 import { TransactionForm } from "./TransactionForm";
 import { TransactionRow } from "./TransactionRow";
 
@@ -144,18 +145,16 @@ function CompactAccountForm({ onSubmit }: { onSubmit(input: AccountInput): Promi
         <div className="two-fields">
           <label>
             类型
-            <select
+            <Select
               value={draft.kind}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, kind: event.target.value as Account["kind"] }))
+              onChange={(kind) =>
+                setDraft((current) => ({ ...current, kind: kind as Account["kind"] }))
               }
-            >
-              {Object.entries(accountKindLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              options={Object.entries(accountKindLabels).map(([value, label]) => ({
+                value,
+                label
+              }))}
+            />
           </label>
           <label>
             初始
@@ -207,18 +206,16 @@ function CompactCategoryForm({ onSubmit }: { onSubmit(input: CategoryInput): Pro
         <div className="two-fields">
           <label>
             类型
-            <select
+            <Select
               value={draft.type}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  type: event.target.value as Category["type"]
-                }))
+              onChange={(type) =>
+                setDraft((current) => ({ ...current, type: type as Category["type"] }))
               }
-            >
-              <option value="expense">支出</option>
-              <option value="income">收入</option>
-            </select>
+              options={[
+                { value: "expense", label: "支出" },
+                { value: "income", label: "收入" }
+              ]}
+            />
           </label>
           <label>
             颜色

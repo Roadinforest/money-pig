@@ -3,6 +3,7 @@
 import { Trash2 } from "lucide-react";
 import type { Account, AgentDraftTransaction, Category, TransactionType } from "../../../shared/types";
 import { IconButton } from "../../components/IconButton";
+import { Select } from "../../components/Select";
 import { isDraftReady } from "./draftValidation";
 
 export function AgentDraftTable({
@@ -60,10 +61,10 @@ function AgentDraftRow({
 
   return (
     <article className={`draft-row ${isDraftReady(draft) ? "" : "invalid"}`}>
-      <select
+      <Select
         value={draft.type}
-        onChange={(event) => {
-          const type = event.target.value as TransactionType;
+        onChange={(value) => {
+          const type = value as TransactionType;
           const category = categories.find((item) => item.type === type);
           const transferAccount = accounts.find((item) => item.id !== draft.accountId);
           onChange(draft.id, {
@@ -72,11 +73,12 @@ function AgentDraftRow({
             transferAccountId: type === "transfer" ? transferAccount?.id ?? "" : null
           });
         }}
-      >
-        <option value="expense">支出</option>
-        <option value="income">收入</option>
-        <option value="transfer">转账</option>
-      </select>
+        options={[
+          { value: "expense", label: "支出" },
+          { value: "income", label: "收入" },
+          { value: "transfer", label: "转账" }
+        ]}
+      />
 
       <input
         type="date"
@@ -92,41 +94,35 @@ function AgentDraftRow({
         onChange={(event) => onChange(draft.id, { amount: Number(event.target.value) })}
       />
 
-      <select value={draft.accountId} onChange={(event) => onChange(draft.id, { accountId: event.target.value })}>
-        <option value="">账户</option>
-        {accounts.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.name}
-          </option>
-        ))}
-      </select>
+      <Select
+        value={draft.accountId}
+        onChange={(accountId) => onChange(draft.id, { accountId })}
+        options={[
+          { value: "", label: "账户" },
+          ...accounts.map((item) => ({ value: item.id, label: item.name }))
+        ]}
+      />
 
       {draft.type === "transfer" ? (
-        <select
+        <Select
           value={draft.transferAccountId ?? ""}
-          onChange={(event) => onChange(draft.id, { transferAccountId: event.target.value })}
-        >
-          <option value="">转入账户</option>
-          {accounts
-            .filter((item) => item.id !== draft.accountId)
-            .map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-        </select>
+          onChange={(transferAccountId) => onChange(draft.id, { transferAccountId })}
+          options={[
+            { value: "", label: "转入账户" },
+            ...accounts
+              .filter((item) => item.id !== draft.accountId)
+              .map((item) => ({ value: item.id, label: item.name }))
+          ]}
+        />
       ) : (
-        <select
+        <Select
           value={draft.categoryId ?? ""}
-          onChange={(event) => onChange(draft.id, { categoryId: event.target.value })}
-        >
-          <option value="">分类</option>
-          {typedCategories.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
+          onChange={(categoryId) => onChange(draft.id, { categoryId })}
+          options={[
+            { value: "", label: "分类" },
+            ...typedCategories.map((item) => ({ value: item.id, label: item.name }))
+          ]}
+        />
       )}
 
       <input value={draft.note ?? ""} onChange={(event) => onChange(draft.id, { note: event.target.value })} />

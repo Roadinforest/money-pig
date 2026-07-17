@@ -4,6 +4,7 @@ import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight, Plus } from "lucide-react"
 import { FormEvent, useState } from "react";
 import type { Account, Category, TransactionInput, TransactionType } from "../../../shared/types";
 import { PanelTitle } from "../../components/PanelTitle";
+import { Select } from "../../components/Select";
 import { transactionTypeLabels } from "../../lib/labels";
 import { formatDateInput } from "../../lib/format";
 
@@ -115,54 +116,40 @@ export function TransactionForm({
 
         <label>
           账户
-          <select
+          <Select
             value={draft.accountId}
-            onChange={(event) => setDraft((current) => ({ ...current, accountId: event.target.value }))}
-            required
-          >
-            {activeAccounts.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
+            onChange={(accountId) => setDraft((current) => ({ ...current, accountId }))}
+            options={activeAccounts.map((item) => ({ value: item.id, label: item.name }))}
+          />
         </label>
 
         {draft.type === "transfer" ? (
           <label>
             转入
-            <select
+            <Select
               value={draft.transferAccountId ?? ""}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, transferAccountId: event.target.value }))
+              onChange={(transferAccountId) =>
+                setDraft((current) => ({ ...current, transferAccountId }))
               }
-              required
-            >
-              <option value="">选择账户</option>
-              {activeAccounts
-                .filter((item) => item.id !== draft.accountId)
-                .map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-            </select>
+              options={[
+                { value: "", label: "选择账户" },
+                ...activeAccounts
+                  .filter((item) => item.id !== draft.accountId)
+                  .map((item) => ({ value: item.id, label: item.name }))
+              ]}
+            />
           </label>
         ) : (
           <label>
             分类
-            <select
+            <Select
               value={draft.categoryId ?? ""}
-              onChange={(event) => setDraft((current) => ({ ...current, categoryId: event.target.value }))}
-              required
-            >
-              <option value="">选择分类</option>
-              {activeCategories.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
+              onChange={(categoryId) => setDraft((current) => ({ ...current, categoryId }))}
+              options={[
+                { value: "", label: "选择分类" },
+                ...activeCategories.map((item) => ({ value: item.id, label: item.name }))
+              ]}
+            />
           </label>
         )}
 

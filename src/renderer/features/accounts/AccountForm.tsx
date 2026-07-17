@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { Plus } from "lucide-react";
 import type { Account, AccountInput } from "../../../shared/types";
 import { PanelTitle } from "../../components/PanelTitle";
+import { Select } from "../../components/Select";
 import { accountKindLabels } from "../../lib/labels";
 
 export function AccountForm({ onSubmit }: { onSubmit(input: AccountInput): Promise<void> }) {
@@ -36,18 +37,16 @@ export function AccountForm({ onSubmit }: { onSubmit(input: AccountInput): Promi
         <div className="two-fields">
           <label>
             类型
-            <select
+            <Select
               value={draft.kind}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, kind: event.target.value as Account["kind"] }))
+              onChange={(kind) =>
+                setDraft((current) => ({ ...current, kind: kind as Account["kind"] }))
               }
-            >
-              {Object.entries(accountKindLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              options={Object.entries(accountKindLabels).map(([value, label]) => ({
+                value,
+                label
+              }))}
+            />
           </label>
           <label>
             币种
