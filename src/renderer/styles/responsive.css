@@ -29,12 +29,26 @@
   }
 
   .stats-summary-grid,
+  .stats-insight-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stats-detail-grid,
   .stats-pies {
     grid-template-columns: 1fr;
   }
 
+  .stats-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .accounts-workspace {
     grid-template-columns: 1fr;
+  }
+
+  .transaction-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .account-edit-row {
@@ -91,6 +105,11 @@
   }
 
   .form-grid,
+  .transaction-edit-row,
+  .transaction-filters,
+  .stats-scope-controls,
+  .stats-summary-grid,
+  .stats-insight-grid,
   .two-fields,
   .pie-chart,
   .account-manage-row,
@@ -100,8 +119,14 @@
     grid-template-columns: 1fr;
   }
 
+  .transaction-query {
+    grid-column: auto;
+  }
+
   .pie-visual {
     width: min(220px, 100%);
+    height: auto;
+    aspect-ratio: 1;
     justify-self: center;
   }
 

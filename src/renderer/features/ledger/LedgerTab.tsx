@@ -10,6 +10,7 @@ import type {
   CategoryInput,
   DashboardSummary,
   TransactionInput,
+  TransactionUpdateInput,
   TransactionView
 } from "../../../shared/types";
 import { formatMoney } from "../../lib/format";
@@ -28,6 +29,7 @@ export function LedgerTab({
   onCreateTransaction,
   onCreateAccount,
   onCreateCategory,
+  onUpdateTransaction,
   onDeleteTransaction
 }: {
   accounts: Account[];
@@ -37,6 +39,7 @@ export function LedgerTab({
   onCreateTransaction(input: TransactionInput): Promise<void>;
   onCreateAccount(input: AccountInput): Promise<void>;
   onCreateCategory(input: CategoryInput): Promise<void>;
+  onUpdateTransaction(input: TransactionUpdateInput): Promise<void>;
   onDeleteTransaction(id: string): Promise<void>;
 }) {
   return (
@@ -76,12 +79,19 @@ export function LedgerTab({
 
         <section className="panel ledger-panel">
           <PanelTitle icon={<Landmark size={18} />} title="流水" />
-          <div className="ledger-list">
+          <div className="ledger-list ledger-preview-list">
             {transactions.length === 0 ? (
               <div className="empty-row">暂无流水</div>
             ) : (
               transactions.map((item) => (
-                <TransactionRow key={item.id} transaction={item} onDelete={onDeleteTransaction} />
+                <TransactionRow
+                  key={item.id}
+                  transaction={item}
+                  accounts={accounts}
+                  categories={categories}
+                  onUpdate={onUpdateTransaction}
+                  onDelete={onDeleteTransaction}
+                />
               ))
             )}
           </div>

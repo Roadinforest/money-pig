@@ -1,0 +1,57 @@
+/* Dedicated transaction browser: filters, sorting and scrollable editing list. */
+
+.transactions-page {
+  display: grid;
+  gap: 16px;
+}
+
+.transactions-panel-heading,
+.transactions-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.transactions-panel-heading .panel-title,
+.transactions-list-heading .panel-title {
+  margin-bottom: 0;
+}
+
+.transaction-filters-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.transaction-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.transaction-query {
+  grid-column: span 2;
+}
+
+.transactions-list-panel {
+  min-height: 360px;
+}
+
+.transactions-list-heading {
+  margin-bottom: 14px;
+}
+
+.transactions-list-heading > span {
+  color: #68706a;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.transactions-list {
+  max-height: calc(100vh - 390px);
+  min-height: 220px;
+  overflow-y: auto;
+  align-content: start;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+}

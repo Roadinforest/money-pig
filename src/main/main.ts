@@ -72,6 +72,7 @@ async function reportSmokeStatus(window: BrowserWindow): Promise<void> {
       "window.moneyPig",
       "&& typeof window.moneyPig.getState === 'function'",
       "&& typeof window.moneyPig.createTransactions === 'function'",
+      "&& typeof window.moneyPig.getCnyExchangeRates === 'function'",
       "&& typeof window.moneyPig.parseTransactionsWithAgent === 'function'",
       "&& typeof window.moneyPig.getAgentSettings === 'function'",
       "&& typeof window.moneyPig.saveAgentSettings === 'function'",

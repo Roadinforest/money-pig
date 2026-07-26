@@ -1,4 +1,4 @@
-/* Stats tab: toolbar, line chart, and category pie charts. */
+/* Stats tab: scope controls, insight cards and responsive Recharts surfaces. */
 
 .stats-page {
   display: grid;
@@ -6,111 +6,190 @@
 }
 
 .stats-toolbar {
-  display: grid;
-  grid-template-columns: minmax(160px, 220px);
-  gap: 10px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
 }
 
 .stats-toolbar .panel-title {
-  margin-bottom: 0;
+  margin-bottom: 8px;
 }
 
-.stats-summary-grid {
+.stats-scope-controls {
+  width: min(520px, 100%);
+  display: grid;
+  grid-template-columns: minmax(160px, 0.8fr) minmax(220px, 1.2fr);
+  gap: 12px;
+}
+
+.stats-summary-grid,
+.stats-insight-grid {
   grid-template-columns: repeat(4, minmax(130px, 1fr));
   margin-bottom: 0;
 }
 
-.stats-line-panel {
-  min-width: 0;
-}
-
-.line-chart {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-}
-
-.line-chart svg {
-  width: 100%;
-  min-height: 260px;
-  display: block;
-  background: #fff;
-  border: 1px solid #ece8dc;
-  border-radius: 8px;
-}
-
-.line-chart line {
-  stroke: #ece8dc;
-  stroke-width: 1;
-}
-
-.line-chart text {
-  fill: #6b736d;
-  font-size: 11px;
-}
-
-.line-chart path {
-  fill: none;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.income-line {
-  stroke: #167248;
-}
-
-.expense-line {
-  stroke: #b45309;
-}
-
-.chart-legend {
+.stats-rate-status {
+  min-height: 44px;
   display: flex;
-  gap: 14px;
-  color: #5d665f;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #d9e5dc;
+  border-radius: 8px;
+  color: #365a49;
+  background: #f0f8f3;
+  padding: 8px 12px;
   font-size: 13px;
 }
 
-.chart-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.stats-rate-status span {
+  min-width: 0;
+  flex: 1;
 }
 
-.chart-legend span::before {
-  content: "";
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
+.stats-rate-source {
+  color: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.income-dot::before {
-  background: #167248;
+.stats-rate-status.loading {
+  border-color: #d8e1eb;
+  color: #315f86;
+  background: #f2f7fb;
 }
 
-.expense-dot::before {
-  background: #b45309;
+.stats-rate-status.error {
+  border-color: #f0c3c0;
+  color: #8a2b26;
+  background: #fff3f2;
 }
 
+.stats-insight-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.stats-insight-card {
+  min-width: 0;
+  min-height: 108px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 11px;
+  align-items: start;
+  border: 1px solid #dfddd5;
+  border-radius: 8px;
+  background: #fffefa;
+  padding: 14px;
+  box-shadow: 0 1px 2px rgb(35 45 40 / 6%);
+}
+
+.stats-insight-card > div:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.stats-insight-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #ece9df;
+  color: #354039;
+}
+
+.stats-insight-card span,
+.stats-insight-card small {
+  color: #68706a;
+}
+
+.stats-insight-card span {
+  font-size: 12px;
+}
+
+.stats-insight-card strong {
+  min-width: 0;
+  color: #26312c;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.stats-insight-card small {
+  font-size: 11px;
+}
+
+.stats-insight-card.green .stats-insight-icon,
+.stats-insight-card.green strong {
+  color: #167248;
+}
+
+.stats-insight-card.orange .stats-insight-icon,
+.stats-insight-card.orange strong {
+  color: #b45309;
+}
+
+.stats-insight-card.blue .stats-insight-icon,
+.stats-insight-card.blue strong {
+  color: #1d5f9f;
+}
+
+.stats-insight-card.red .stats-insight-icon,
+.stats-insight-card.red strong {
+  color: #b42318;
+}
+
+.stats-line-panel,
+.stats-detail-grid > .panel,
+.stats-pies > .panel {
+  min-width: 0;
+}
+
+.stats-detail-grid,
 .stats-pies {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
+.recharts-frame {
+  width: 100%;
+  min-width: 0;
+}
+
+.trend-chart {
+  height: 320px;
+  border: 1px solid #ece8dc;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgb(239 246 241 / 62%), rgb(255 255 255 / 0%) 46%),
+    #fff;
+  padding: 8px 8px 0;
+}
+
+.category-bar-chart,
+.weekday-radar-chart {
+  height: 300px;
+}
+
+.recharts-default-legend {
+  color: #5d665f;
+  font-size: 12px;
+}
+
 .pie-chart {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
+  grid-template-columns: 190px minmax(0, 1fr);
   gap: 18px;
   align-items: center;
 }
 
 .pie-visual {
-  width: 180px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 1px solid #ece8dc;
-  box-shadow: inset 0 0 0 34px #fffefa;
+  width: 190px;
+  height: 190px;
 }
 
 .pie-legend {

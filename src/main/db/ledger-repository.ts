@@ -11,8 +11,10 @@ import type {
   Category,
   CategoryInput,
   DashboardSummary,
+  ExchangeRateResult,
   LedgerState,
   TransactionInput,
+  TransactionUpdateInput,
   TransactionView
 } from "../../shared/types.js";
 import { openLedgerDatabase, persistLedgerDatabase } from "./connection.js";
@@ -50,6 +52,58 @@ export class LedgerRepository {
 
   getDatabasePath(): string {
     return this.databasePath;
+  }
+
+  getExchangeRateCache(cacheKey: string): ExchangeRateResult | null {
+    const row = this.get<{
+      base_currency: string;
+      source: string;
+      rate_mode: string;
+      points_json: string;
+      fetched_at: string;
+    }>(
+      `select base_currency, source, rate_mode, points_json, fetched_at
+       from exchange_rate_cache
+       where cache_key = ?`,
+      [cacheKey]
+    );
+    if (!row) return null;
+
+    try {
+      const result: ExchangeRateResult = {
+        baseCurrency: row.base_currency as ExchangeRateResult["baseCurrency"],
+        source: row.source as ExchangeRateResult["source"],
+        rateMode: row.rate_mode as ExchangeRateResult["rateMode"],
+        points: JSON.parse(row.points_json) as ExchangeRateResult["points"],
+        fetchedAt: row.fetched_at
+      };
+      return isValidExchangeRateResult(result) ? result : null;
+    } catch {
+      return null;
+    }
+  }
+
+  saveExchangeRateCache(cacheKey: string, result: ExchangeRateResult): void {
+    this.run(
+      `insert into exchange_rate_cache
+        (cache_key, base_currency, source, rate_mode, points_json, fetched_at)
+       values (?, ?, ?, ?, ?, ?)
+       on conflict(cache_key) do update set
+         base_currency = excluded.base_currency,
+         source = excluded.source,
+         rate_mode = excluded.rate_mode,
+         points_json = excluded.points_json,
+         fetched_at = excluded.fetched_at`,
+      [
+        cacheKey,
+        result.baseCurrency,
+        result.source,
+        result.rateMode,
+        JSON.stringify(result.points),
+        result.fetchedAt
+      ]
+    );
+    this.persist();
   }
 
   createAccount(input: AccountInput): LedgerState {
@@ -174,6 +228,43 @@ export class LedgerRepository {
     return this.getState();
   }
 
+  updateTransaction(input: TransactionUpdateInput): LedgerState {
+    assertNonEmpty(input.id, "交易 ID 不能为空");
+    const existing = this.get<{
+      account_id: string;
+      transfer_account_id: string | null;
+      category_id: string | null;
+    }>(
+      "select account_id, transfer_account_id, category_id from transactions where id = ?",
+      [input.id]
+    );
+    if (!existing) {
+      throw new Error("交易不存在");
+    }
+
+    this.validateTransaction(input, existing);
+    this.run(
+      `update transactions
+       set type = ?, account_id = ?, transfer_account_id = ?, category_id = ?,
+           amount_cents = ?, occurred_on = ?, note = ?, updated_at = ?
+       where id = ?`,
+      [
+        input.type,
+        input.accountId,
+        input.type === "transfer" ? input.transferAccountId ?? null : null,
+        input.type === "transfer" ? null : input.categoryId ?? null,
+        toCents(input.amount),
+        input.occurredOn,
+        input.note?.trim() ?? "",
+        isoNow(),
+        input.id
+      ]
+    );
+
+    this.persist();
+    return this.getState();
+  }
+
   deleteTransaction(id: string): LedgerState {
     assertNonEmpty(id, "交易 ID 不能为空");
     this.run("delete from transactions where id = ?", [id]);
@@ -217,15 +308,16 @@ export class LedgerRepository {
       `select
         t.*,
         a.name as account_name,
+        a.currency as account_currency,
         ta.name as transfer_account_name,
+        ta.currency as transfer_account_currency,
         c.name as category_name,
         c.color as category_color
       from transactions t
       join accounts a on a.id = t.account_id
       left join accounts ta on ta.id = t.transfer_account_id
       left join categories c on c.id = t.category_id
-      order by t.occurred_on desc, t.created_at desc
-      limit 200`
+      order by t.occurred_on desc, t.created_at desc`
     );
 
     return rows.map(mapTransactionView);
@@ -283,16 +375,24 @@ export class LedgerRepository {
     };
   }
 
-  private validateTransaction(input: TransactionInput): void {
+  private validateTransaction(
+    input: TransactionInput,
+    existing?: {
+      account_id: string;
+      transfer_account_id: string | null;
+      category_id: string | null;
+    }
+  ): void {
     assertNonEmpty(input.accountId, "账户不能为空");
     assertNonEmpty(input.occurredOn, "日期不能为空");
     if (!Number.isFinite(input.amount) || input.amount <= 0) {
       throw new Error("金额必须大于 0");
     }
 
-    const account = this.get<{ id: string }>("select id from accounts where id = ? and archived = 0", [
-      input.accountId
-    ]);
+    const account = this.get<{ id: string }>(
+      "select id from accounts where id = ? and (archived = 0 or id = ?)",
+      [input.accountId, existing?.account_id ?? ""]
+    );
     if (!account) {
       throw new Error("账户不存在或已归档");
     }
@@ -302,9 +402,10 @@ export class LedgerRepository {
       if (input.transferAccountId === input.accountId) {
         throw new Error("转出和转入账户不能相同");
       }
-      const target = this.get<{ id: string }>("select id from accounts where id = ? and archived = 0", [
-        input.transferAccountId ?? ""
-      ]);
+      const target = this.get<{ id: string }>(
+        "select id from accounts where id = ? and (archived = 0 or id = ?)",
+        [input.transferAccountId ?? "", existing?.transfer_account_id ?? ""]
+      );
       if (!target) {
         throw new Error("转入账户不存在或已归档");
       }
@@ -313,8 +414,8 @@ export class LedgerRepository {
 
     assertNonEmpty(input.categoryId ?? "", "分类不能为空");
     const category = this.get<{ id: string }>(
-      "select id from categories where id = ? and type = ? and archived = 0",
-      [input.categoryId ?? "", input.type]
+      "select id from categories where id = ? and type = ? and (archived = 0 or id = ?)",
+      [input.categoryId ?? "", input.type, existing?.category_id ?? ""]
     );
     if (!category) {
       throw new Error("分类不存在或类型不匹配");
@@ -371,4 +472,21 @@ export class LedgerRepository {
   private persist(): void {
     persistLedgerDatabase(this.db, this.databasePath);
   }
+}
+
+function isValidExchangeRateResult(result: ExchangeRateResult): boolean {
+  return (
+    result.baseCurrency === "CNY" &&
+    (result.source === "Frankfurter" || result.source === "ExchangeRate-API") &&
+    (result.rateMode === "historical" || result.rateMode === "latest-fallback") &&
+    typeof result.fetchedAt === "string" &&
+    Array.isArray(result.points) &&
+    result.points.every(
+      (point) =>
+        typeof point.currency === "string" &&
+        typeof point.date === "string" &&
+        Number.isFinite(point.cnyPerUnit) &&
+        point.cnyPerUnit > 0
+    )
+  );
 }

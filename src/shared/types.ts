@@ -39,7 +39,9 @@ export interface Transaction {
 
 export interface TransactionView extends Transaction {
   accountName: string;
+  accountCurrency: string;
   transferAccountName: string | null;
+  transferAccountCurrency: string | null;
   categoryName: string | null;
   categoryColor: string | null;
 }
@@ -74,6 +76,10 @@ export interface TransactionInput {
   amount: number;
   occurredOn: string;
   note?: string;
+}
+
+export interface TransactionUpdateInput extends TransactionInput {
+  id: string;
 }
 
 export type AgentSourceType = "wechat" | "alipay" | "speech" | "plain-text" | "image";
@@ -124,15 +130,37 @@ export interface CategoryInput {
   icon: string;
 }
 
+export interface ExchangeRateRequest {
+  currencies: string[];
+  from: string;
+  to: string;
+}
+
+export interface ExchangeRatePoint {
+  currency: string;
+  date: string;
+  cnyPerUnit: number;
+}
+
+export interface ExchangeRateResult {
+  baseCurrency: "CNY";
+  points: ExchangeRatePoint[];
+  fetchedAt: string;
+  source: "Frankfurter" | "ExchangeRate-API";
+  rateMode: "historical" | "latest-fallback";
+}
+
 export interface MoneyPigApi {
   getState(): Promise<LedgerState>;
   createTransaction(input: TransactionInput): Promise<LedgerState>;
   createTransactions(inputs: TransactionInput[]): Promise<LedgerState>;
+  updateTransaction(input: TransactionUpdateInput): Promise<LedgerState>;
   deleteTransaction(id: string): Promise<LedgerState>;
   createAccount(input: AccountInput): Promise<LedgerState>;
   updateAccount(input: AccountUpdateInput): Promise<LedgerState>;
   deleteAccount(id: string): Promise<LedgerState>;
   createCategory(input: CategoryInput): Promise<LedgerState>;
+  getCnyExchangeRates(input: ExchangeRateRequest): Promise<ExchangeRateResult>;
   parseTransactionsWithAgent(input: AgentParseRequest): Promise<AgentParseResult>;
   getAgentSettings(): Promise<AgentSettings>;
   saveAgentSettings(input: AgentSettings): Promise<AgentSettings>;
@@ -143,11 +171,13 @@ export const IPC_CHANNELS = {
   getState: "ledger:get-state",
   createTransaction: "ledger:create-transaction",
   createTransactions: "ledger:create-transactions",
+  updateTransaction: "ledger:update-transaction",
   deleteTransaction: "ledger:delete-transaction",
   createAccount: "ledger:create-account",
   updateAccount: "ledger:update-account",
   deleteAccount: "ledger:delete-account",
   createCategory: "ledger:create-category",
+  getCnyExchangeRates: "exchange-rates:get-cny",
   parseTransactionsWithAgent: "agent:parse-transactions",
   getAgentSettings: "agent:get-settings",
   saveAgentSettings: "agent:save-settings",

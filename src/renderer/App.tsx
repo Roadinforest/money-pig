@@ -1,7 +1,16 @@
 // Top-level App: loads ledger + settings, owns shared state, dispatches IPC calls,
 // and delegates rendering to feature tabs.
 
-import { ChangeEvent, ClipboardEvent, DragEvent, FormEvent, useEffect, useState } from "react";
+import {
+  ChangeEvent,
+  ClipboardEvent,
+  DragEvent,
+  FormEvent,
+  lazy,
+  Suspense,
+  useEffect,
+  useState
+} from "react";
 import { RefreshCw } from "lucide-react";
 import type {
   Account,
@@ -12,18 +21,23 @@ import type {
   AgentSourceType,
   CategoryInput,
   LedgerState,
-  TransactionInput
+  TransactionInput,
+  TransactionUpdateInput
 } from "../shared/types";
 import { errorMessage } from "./lib/errors";
 import { formatDateInput } from "./lib/format";
 import { readFileAsDataUrl, readUrlAsDataUrl, stripImageFileUrls, isImageFileUrl } from "./lib/files";
 import { TABS, type AppTab } from "./app/tabs";
 import { LedgerTab } from "./features/ledger/LedgerTab";
+import { TransactionsTab } from "./features/transactions/TransactionsTab";
 import { AccountsTab } from "./features/accounts/AccountsTab";
-import { StatsTab } from "./features/stats/StatsTab";
 import { AgentTab } from "./features/agent/AgentTab";
 import type { AgentImage } from "./features/agent/AgentImageInput";
 import { recomputeDraftWarnings } from "./features/agent/draftValidation";
+
+const StatsTab = lazy(() =>
+  import("./features/stats/StatsTab").then((module) => ({ default: module.StatsTab }))
+);
 
 const emptyState: LedgerState = {
   accounts: [],
@@ -109,6 +123,16 @@ export function App() {
       setState(await window.moneyPig.deleteTransaction(id));
     } catch (err) {
       setError(errorMessage(err));
+    }
+  }
+
+  async function updateTransaction(input: TransactionUpdateInput) {
+    setError("");
+    try {
+      setState(await window.moneyPig.updateTransaction(input));
+    } catch (err) {
+      setError(errorMessage(err));
+      throw err;
     }
   }
 
@@ -398,6 +422,15 @@ export function App() {
           onCreateTransaction={createTransaction}
           onCreateAccount={createAccount}
           onCreateCategory={createCategory}
+          onUpdateTransaction={updateTransaction}
+          onDeleteTransaction={deleteTransaction}
+        />
+      ) : activeTab === "transactions" ? (
+        <TransactionsTab
+          accounts={state.accounts}
+          categories={state.categories}
+          transactions={state.transactions}
+          onUpdateTransaction={updateTransaction}
           onDeleteTransaction={deleteTransaction}
         />
       ) : activeTab === "accounts" ? (
@@ -408,13 +441,15 @@ export function App() {
           onDeleteAccount={deleteAccount}
         />
       ) : activeTab === "stats" ? (
-        <StatsTab
-          accounts={state.accounts}
-          categories={state.categories}
-          transactions={state.transactions}
-          accountId={statsAccountId}
-          onChangeAccount={setStatsAccountId}
-        />
+        <Suspense fallback={<div className="panel empty-row">正在加载统计图表…</div>}>
+          <StatsTab
+            accounts={state.accounts}
+            categories={state.categories}
+            transactions={state.transactions}
+            accountId={statsAccountId}
+            onChangeAccount={setStatsAccountId}
+          />
+        </Suspense>
       ) : (
         <AgentTab
           accounts={state.accounts}

@@ -6,6 +6,7 @@
 @import "./layout.css";
 @import "./forms.css";
 @import "./ledger.css";
+@import "./transactions.css";
 @import "./accounts.css";
 @import "./stats.css";
 @import "./agent.css";

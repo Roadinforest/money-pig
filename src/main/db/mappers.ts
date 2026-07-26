@@ -39,7 +39,9 @@ export interface TransactionViewRow {
   created_at: string;
   updated_at: string;
   account_name: string;
+  account_currency: string;
   transfer_account_name: string | null;
+  transfer_account_currency: string | null;
   category_name: string | null;
   category_color: string | null;
 }
@@ -84,7 +86,9 @@ export function mapTransactionView(row: TransactionViewRow): TransactionView {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     accountName: row.account_name,
+    accountCurrency: row.account_currency,
     transferAccountName: row.transfer_account_name,
+    transferAccountCurrency: row.transfer_account_currency,
     categoryName: row.category_name,
     categoryColor: row.category_color
   };

@@ -48,7 +48,7 @@
 }
 
 .app-tabs {
-  grid-template-columns: repeat(4, minmax(96px, 1fr));
+  grid-template-columns: repeat(5, minmax(88px, 1fr));
 }
 
 .tabbar button {

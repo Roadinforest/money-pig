@@ -51,6 +51,15 @@ export function applyMigrations(db: SqlJsDatabase): void {
       )
     );
 
+    create table if not exists exchange_rate_cache (
+      cache_key text primary key,
+      base_currency text not null check (base_currency = 'CNY'),
+      source text not null check (source in ('Frankfurter', 'ExchangeRate-API')),
+      rate_mode text not null check (rate_mode in ('historical', 'latest-fallback')),
+      points_json text not null,
+      fetched_at text not null
+    );
+
     create index if not exists idx_transactions_occurred_on on transactions(occurred_on desc);
     create index if not exists idx_transactions_account_id on transactions(account_id);
     create index if not exists idx_transactions_category_id on transactions(category_id);

@@ -40,6 +40,7 @@ export function TransactionForm({
   const activeCategories = categories.filter(
     (item) => !item.archived && item.type === draft.type
   );
+  const sourceAccount = activeAccounts.find((item) => item.id === draft.accountId);
 
   function updateType(type: TransactionType) {
     const firstCategory = categories.find((item) => item.type === type && !item.archived);
@@ -91,7 +92,7 @@ export function TransactionForm({
         </div>
 
         <label>
-          金额
+          金额{sourceAccount ? `（${sourceAccount.currency}）` : ""}
           <input
             type="number"
             min="0.01"
@@ -119,7 +120,10 @@ export function TransactionForm({
           <Select
             value={draft.accountId}
             onChange={(accountId) => setDraft((current) => ({ ...current, accountId }))}
-            options={activeAccounts.map((item) => ({ value: item.id, label: item.name }))}
+            options={activeAccounts.map((item) => ({
+              value: item.id,
+              label: `${item.name} · ${item.currency}`
+            }))}
           />
         </label>
 
@@ -135,7 +139,10 @@ export function TransactionForm({
                 { value: "", label: "选择账户" },
                 ...activeAccounts
                   .filter((item) => item.id !== draft.accountId)
-                  .map((item) => ({ value: item.id, label: item.name }))
+                  .map((item) => ({
+                    value: item.id,
+                    label: `${item.name} · ${item.currency}`
+                  }))
               ]}
             />
           </label>

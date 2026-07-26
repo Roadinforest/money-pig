@@ -1,13 +1,19 @@
 // Pure statistics computation for the Stats tab.
 // No React, no IPC — easy to unit-test once we add a Vitest setup.
 
-import type { Account, Category, TransactionView } from "../../../shared/types";
+import type {
+  Account,
+  Category,
+  ExchangeRatePoint,
+  TransactionView
+} from "../../../shared/types";
 import { padNumber } from "../../lib/format";
 
 export interface DailyPoint {
   day: number;
   income: number;
   expense: number;
+  cumulativeNet: number;
 }
 
 export interface PieSlice {
@@ -17,31 +23,105 @@ export interface PieSlice {
   percent: number;
 }
 
+export interface WeekdayPoint {
+  name: string;
+  income: number;
+  expense: number;
+}
+
 export interface MonthlyStats {
   dailyPoints: DailyPoint[];
+  weekdayPoints: WeekdayPoint[];
   monthIncome: number;
   monthExpense: number;
   monthNet: number;
   transactionCount: number;
+  savingsRate: number;
+  averageDailyExpense: number;
+  largestExpense: number;
+  activeDays: number;
   incomeSlices: PieSlice[];
   expenseSlices: PieSlice[];
+}
+
+export interface CurrencyConversionResult {
+  transactions: TransactionView[];
+  missingCurrencies: string[];
+}
+
+export function convertTransactionsToCny(
+  transactions: TransactionView[],
+  ratePoints: ExchangeRatePoint[],
+  useLatestRateForAllDates = false
+): CurrencyConversionResult {
+  const ratesByCurrency = new Map<string, ExchangeRatePoint[]>();
+  for (const point of ratePoints) {
+    const bucket = ratesByCurrency.get(point.currency) ?? [];
+    bucket.push(point);
+    ratesByCurrency.set(point.currency, bucket);
+  }
+  for (const bucket of ratesByCurrency.values()) {
+    bucket.sort((left, right) => left.date.localeCompare(right.date));
+  }
+
+  const missingCurrencies = new Set<string>();
+  const converted: TransactionView[] = [];
+  for (const transaction of transactions) {
+    const currency = transaction.accountCurrency.toUpperCase();
+    if (currency === "CNY") {
+      converted.push(transaction);
+      continue;
+    }
+
+    const rates = ratesByCurrency.get(currency) ?? [];
+    let applicable = useLatestRateForAllDates ? rates.at(-1) : undefined;
+    if (!useLatestRateForAllDates) {
+      for (const rate of rates) {
+        if (rate.date > transaction.occurredOn) break;
+        applicable = rate;
+      }
+    }
+    if (!applicable) {
+      missingCurrencies.add(currency);
+      continue;
+    }
+
+    converted.push({
+      ...transaction,
+      amount: transaction.amount * applicable.cnyPerUnit,
+      accountCurrency: "CNY"
+    });
+  }
+
+  return {
+    transactions: converted,
+    missingCurrencies: [...missingCurrencies].sort()
+  };
 }
 
 export function buildMonthlyStats(
   transactions: TransactionView[],
   categories: Category[],
-  accountId: string
+  accountId: string,
+  requestedMonth?: string
 ): MonthlyStats {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const monthPrefix = `${year}-${padNumber(month + 1)}-`;
+  const currentMonth = `${now.getFullYear()}-${padNumber(now.getMonth() + 1)}`;
+  const monthKey = /^\d{4}-\d{2}$/.test(requestedMonth ?? "")
+    ? requestedMonth!
+    : currentMonth;
+  const [year, monthNumber] = monthKey.split("-").map(Number);
+  const daysInMonth = new Date(year, monthNumber, 0).getDate();
+  const monthPrefix = `${monthKey}-`;
   const dailyPoints: DailyPoint[] = Array.from({ length: daysInMonth }, (_, index) => ({
     day: index + 1,
     income: 0,
-    expense: 0
+    expense: 0,
+    cumulativeNet: 0
   }));
+  const weekdayPoints: WeekdayPoint[] = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"].map(
+    (name) => ({ name, income: 0, expense: 0 })
+  );
   const categoryColors = new Map(categories.map((item) => [item.id, item.color]));
   const categoryTotals = {
     income: new Map<string, { name: string; color: string; total: number }>(),
@@ -50,6 +130,8 @@ export function buildMonthlyStats(
   let monthIncome = 0;
   let monthExpense = 0;
   let transactionCount = 0;
+  let largestExpense = 0;
+  const activeDays = new Set<number>();
 
   for (const transaction of transactions) {
     if (!transaction.occurredOn.startsWith(monthPrefix) || transaction.type === "transfer") {
@@ -66,12 +148,18 @@ export function buildMonthlyStats(
     }
 
     transactionCount += 1;
+    activeDays.add(day);
+    const jsWeekday = new Date(`${transaction.occurredOn}T00:00:00`).getDay();
+    const weekday = weekdayPoints[(jsWeekday + 6) % 7];
     if (transaction.type === "income") {
       point.income += transaction.amount;
+      weekday.income += transaction.amount;
       monthIncome += transaction.amount;
     } else {
       point.expense += transaction.amount;
+      weekday.expense += transaction.amount;
       monthExpense += transaction.amount;
+      largestExpense = Math.max(largestExpense, transaction.amount);
     }
 
     const bucket = categoryTotals[transaction.type];
@@ -86,12 +174,25 @@ export function buildMonthlyStats(
     bucket.set(key, current);
   }
 
+  let cumulativeNet = 0;
+  for (const point of dailyPoints) {
+    cumulativeNet += point.income - point.expense;
+    point.cumulativeNet = cumulativeNet;
+  }
+
+  const elapsedDays = monthKey === currentMonth ? now.getDate() : daysInMonth;
+
   return {
     dailyPoints,
+    weekdayPoints,
     monthIncome,
     monthExpense,
     monthNet: monthIncome - monthExpense,
     transactionCount,
+    savingsRate: monthIncome > 0 ? ((monthIncome - monthExpense) / monthIncome) * 100 : 0,
+    averageDailyExpense: monthExpense / Math.max(elapsedDays, 1),
+    largestExpense,
+    activeDays: activeDays.size,
     incomeSlices: buildPieSlices([...categoryTotals.income.values()]),
     expenseSlices: buildPieSlices([...categoryTotals.expense.values()])
   };
